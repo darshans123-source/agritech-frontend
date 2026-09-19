@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   TrendingUp,
-  Sparkles,
   Calendar,
   Layers,
   ArrowRight,
@@ -11,7 +10,7 @@ import {
   Store,
   Clock,
   CheckCircle2,
-  HelpCircle
+  ArrowUpRight
 } from 'lucide-react';
 import {
   LineChart,
@@ -20,8 +19,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  ReferenceDot
+  ResponsiveContainer
 } from 'recharts';
 import { MOCK_BHAVISHYA_FORECASTS } from '../constants/mockData';
 import { useLanguage } from '../context/LanguageContext';
@@ -38,206 +36,246 @@ export const KrishiBhavishyaPage: React.FC = () => {
   const forecast = MOCK_BHAVISHYA_FORECASTS[selectedCropKey] || MOCK_BHAVISHYA_FORECASTS['Tomato'];
 
   const chartData = [
-    { day: 'Today', price: forecast.timeframes.today, label: 'Today (Base)' },
-    { day: 'Day 7', price: forecast.timeframes.days7, label: '+7 Days' },
-    { day: 'Day 15', price: forecast.timeframes.days15, label: '+15 Days' },
-    { day: 'Day 30', price: forecast.timeframes.days30, label: '+30 Days (Peak)' },
-    { day: 'Day 60', price: forecast.timeframes.days60, label: '+60 Days' },
+    { day: 'Today', price: forecast.timeframes.today, kgPrice: (forecast.timeframes.today / 100).toFixed(0) },
+    { day: '7 Days', price: forecast.timeframes.days7, kgPrice: (forecast.timeframes.days7 / 100).toFixed(0) },
+    { day: '15 Days', price: forecast.timeframes.days15, kgPrice: (forecast.timeframes.days15 / 100).toFixed(0) },
+    { day: '30 Days', price: forecast.timeframes.days30, kgPrice: (forecast.timeframes.days30 / 100).toFixed(0) },
+    { day: '60 Days', price: forecast.timeframes.days60, kgPrice: (forecast.timeframes.days60 / 100).toFixed(0) },
   ];
 
   const currentTotalRevenue = harvestQuantityQtl * forecast.timeframes.today;
   const peakTotalRevenue = harvestQuantityQtl * forecast.peakPrice;
   const extraProfit = peakTotalRevenue - currentTotalRevenue;
 
+  const todayKg = (forecast.timeframes.today / 100).toFixed(0);
+  const days15Kg = (forecast.timeframes.days15 / 100).toFixed(0);
+  const days30Kg = (forecast.timeframes.days30 / 100).toFixed(0);
+  const peakKg = (forecast.peakPrice / 100).toFixed(0);
+
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 text-white p-6 sm:p-8 shadow-xl border border-amber-500/30">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>AI Mandi Commodity Time Machine</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-white">
-            {t('krishiBhavishya')}
-          </h1>
-
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-            Project agricultural mandi rates up to 60 days into the future. Analyze seasonal supply shortages, metro festival demand surges, and identify the optimal day to sell your harvest.
-          </p>
+    <div className="space-y-8 pb-16 animate-in fade-in">
+      {/* ================================================== */}
+      {/* 1. HEADER: "When should I sell my crop?" */}
+      {/* ================================================== */}
+      <div className="rounded-3xl bg-gradient-to-r from-emerald-800 to-emerald-900 text-white p-6 sm:p-8 shadow-sm border border-emerald-700 space-y-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-700/80 text-emerald-200 text-xs font-bold w-fit">
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>KrishiBhavishya Mandi Forecast</span>
         </div>
+        <h1 className="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
+          When should I sell my crop?
+        </h1>
+        <p className="text-xs sm:text-base text-emerald-100 max-w-2xl leading-relaxed">
+          Compare market rates today versus holding your harvest for 15 to 30 days to maximize profit.
+        </p>
       </div>
 
-      {/* 1. INTERACTIVE INPUT CONTROLS */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="font-extrabold text-base text-slate-900 font-heading">
-            Enter Harvest Parameters
-          </h3>
-          <span className="text-xs text-slate-500">Live APMC Market Simulation</span>
+      {/* ================================================== */}
+      {/* 2. CROP SELECTOR */}
+      {/* ================================================== */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+          <h2 className="text-base font-extrabold text-stone-900 font-heading">
+            Select Your Crop & Output
+          </h2>
+          <span className="text-xs text-stone-500">Live APMC Mandi Forecast</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Select Crop</label>
+            <label className="block text-xs font-bold text-stone-700 mb-1.5">Select Crop</label>
             <select
               value={selectedCropKey}
               onChange={(e) => {
                 setSelectedCropKey(e.target.value);
                 addXP(20, `Checked Bhavishya for ${e.target.value}`);
               }}
-              className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-bold bg-white focus:ring-2 focus:ring-amber-500"
+              className="w-full p-3 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-800 focus:ring-2 focus:ring-emerald-600"
             >
               <option value="Tomato">Tomato (Hybrid F1)</option>
-              <option value="Paddy (Rice)">Paddy / Rice (Sona Masoori)</option>
-              <option value="Onion">Onion (Red Nashik Quality)</option>
+              <option value="Paddy (Rice)">Paddy / Rice (Samba Mahsuri)</option>
+              <option value="Onion">Onion (Nashik Red)</option>
               <option value="Sugarcane">Sugarcane (Co-86032)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Harvest Quantity (Quintals)</label>
+            <label className="block text-xs font-bold text-stone-700 mb-1.5">Harvest Quantity (Quintals)</label>
             <input
               type="number"
               value={harvestQuantityQtl}
               onChange={(e) => setHarvestQuantityQtl(parseInt(e.target.value) || 1)}
-              className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-amber-500"
+              className="w-full p-3 rounded-xl border border-stone-300 text-xs font-bold focus:ring-2 focus:ring-emerald-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Target Harvest Date</label>
+            <label className="block text-xs font-bold text-stone-700 mb-1.5">Estimated Harvest Date</label>
             <input
               type="date"
               value={harvestDate}
               onChange={(e) => setHarvestDate(e.target.value)}
-              className="w-full p-3 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500"
+              className="w-full p-3 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-emerald-600"
             />
           </div>
         </div>
       </div>
 
-      {/* 2. RECHARTS TIME MACHINE CURVE & TIMELINE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Interactive 60-Day Price Trajectory */}
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 font-heading">
-                60-Day Mandi Price Trajectory
-              </h3>
-              <p className="text-xs text-slate-500">Confidence Score: <strong className="text-emerald-700">{forecast.confidenceScore}%</strong></p>
+      {/* ================================================== */}
+      {/* 3. THREE LARGE PRICE CARDS: TODAY, 15 DAYS, 30 DAYS */}
+      {/* ================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* TODAY */}
+        <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-2xs space-y-2 text-center">
+          <div className="text-xs font-black uppercase tracking-wider text-stone-400">
+            TODAY
+          </div>
+          <div className="text-3xl sm:text-4xl font-black text-stone-900 font-heading">
+            ₹{todayKg}<span className="text-base font-normal text-stone-500">/kg</span>
+          </div>
+          <div className="text-xs text-stone-500">
+            ₹{forecast.timeframes.today} per quintal
+          </div>
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold mt-1">
+            Current Rate
+          </span>
+        </div>
+
+        {/* 15 DAYS */}
+        <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-2xs space-y-2 text-center">
+          <div className="text-xs font-black uppercase tracking-wider text-stone-400">
+            15 DAYS
+          </div>
+          <div className="text-3xl sm:text-4xl font-black text-stone-900 font-heading">
+            ₹{days15Kg}<span className="text-base font-normal text-stone-500">/kg</span>
+          </div>
+          <div className="text-xs text-stone-500">
+            ₹{forecast.timeframes.days15} per quintal
+          </div>
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold mt-1">
+            +{(parseFloat(days15Kg) - parseFloat(todayKg)).toFixed(0)}/kg expected
+          </span>
+        </div>
+
+        {/* 30 DAYS (PEAK) */}
+        <div className="p-6 rounded-3xl bg-emerald-50/70 border border-emerald-300 shadow-2xs space-y-2 text-center ring-2 ring-emerald-600/20">
+          <div className="text-xs font-black uppercase tracking-wider text-emerald-800">
+            30 DAYS (RECOMMENDED ⭐)
+          </div>
+          <div className="text-3xl sm:text-4xl font-black text-emerald-900 font-heading">
+            ₹{days30Kg}<span className="text-base font-normal text-emerald-700">/kg</span>
+          </div>
+          <div className="text-xs text-emerald-700">
+            ₹{forecast.timeframes.days30} per quintal
+          </div>
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[11px] font-bold mt-1">
+            Best Price Window
+          </span>
+        </div>
+      </div>
+
+      {/* ================================================== */}
+      {/* 4. KEY SELLING DECISION BOX */}
+      {/* ================================================== */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-emerald-900 text-white shadow-sm space-y-4">
+        <div className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+          Optimal Selling Plan
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+          {/* Suggested Selling Window */}
+          <div className="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-1">
+            <div className="text-xs text-emerald-200">Suggested Selling Window:</div>
+            <div className="text-base sm:text-lg font-black text-white font-heading">
+              {forecast.bestSellingWindow}
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black">
-              {forecast.marketSentiment}
-            </span>
+            <div className="text-[11px] text-emerald-200">Peak festive & metro demand</div>
           </div>
 
-          {/* Interactive Chart */}
-          <div className="h-72 w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fontWeight: 600 }} />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(val) => `₹${val}`}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip
-                  formatter={(val: any) => [`₹${val} / Quintal`, 'Projected Rate']}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#d97706"
-                  strokeWidth={3.5}
-                  dot={{ r: 6, fill: '#d97706', stroke: '#ffffff', strokeWidth: 2 }}
-                  activeDot={{ r: 9, fill: '#10b981' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          {/* Expected Price */}
+          <div className="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-1">
+            <div className="text-xs text-emerald-200">Expected Peak Price:</div>
+            <div className="text-base sm:text-lg font-black text-amber-300 font-heading">
+              ₹{peakKg}/kg (₹{forecast.peakPrice}/qtl)
+            </div>
+            <div className="text-[11px] text-emerald-200">
+              +{forecast.expectedProfitIncrease}% vs selling today
+            </div>
           </div>
 
-          {/* 5-Step Future Timeline Cards */}
-          <div className="grid grid-cols-5 gap-2 text-center pt-2">
-            {[
-              { time: 'Today', price: forecast.timeframes.today, status: 'Base' },
-              { time: '7 Days', price: forecast.timeframes.days7, status: '+10%' },
-              { time: '15 Days', price: forecast.timeframes.days15, status: '+22%' },
-              { time: '30 Days', price: forecast.timeframes.days30, status: 'PEAK ⭐', isPeak: true },
-              { time: '60 Days', price: forecast.timeframes.days60, status: 'Cooling' },
-            ].map((step, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-2xl border transition-all ${
-                  step.isPeak
-                    ? 'bg-amber-500/15 border-amber-400 text-amber-900 ring-2 ring-amber-400/40 shadow-xs'
-                    : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <div className="text-[10px] font-bold text-slate-400 uppercase">{step.time}</div>
-                <div className="text-sm font-black text-slate-900 mt-1">₹{step.price}</div>
-                <div className="text-[9px] font-extrabold text-amber-700 mt-0.5">{step.status}</div>
-              </div>
-            ))}
+          {/* Risk */}
+          <div className="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-1">
+            <div className="text-xs text-emerald-200">Risk Assessment:</div>
+            <div className="text-base sm:text-lg font-black text-white font-heading flex items-center gap-1.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+              <span>Low Risk</span>
+            </div>
+            <div className="text-[11px] text-emerald-200">Holding in dry storage is safe</div>
           </div>
         </div>
 
-        {/* Right Financial Gain Summary & Catalysts */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Potential Extra Profit Card */}
-          <div className="bg-gradient-to-br from-emerald-900 to-teal-950 rounded-3xl p-6 text-white shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-extrabold text-emerald-300 tracking-wider">
-                Harvest Profit Optimization
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 text-[10px] font-bold">
-                Low Risk Index
-              </span>
-            </div>
+        <div className="pt-3 border-t border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-emerald-100 gap-2">
+          <span>
+            Projected Extra Profit on {harvestQuantityQtl} quintals: <strong className="text-amber-300 text-sm">+₹{extraProfit.toLocaleString('en-IN')}</strong>
+          </span>
+          <span className="text-emerald-300">Confidence Score: {forecast.confidenceScore}%</span>
+        </div>
+      </div>
 
-            <div>
-              <div className="text-xs text-slate-300">Potential Extra Profit:</div>
-              <div className="text-3xl font-black font-heading text-amber-400 mt-0.5">
-                +₹{extraProfit.toLocaleString('en-IN')}
-              </div>
-              <div className="text-xs text-emerald-200 mt-1">
-                Gain: <strong>+{forecast.expectedProfitIncrease}%</strong> compared to selling today.
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-xs space-y-1">
-              <div className="text-[11px] font-bold text-emerald-300">Recommended Selling Window:</div>
-              <div className="text-xs font-semibold text-white">{forecast.bestSellingWindow}</div>
-            </div>
-
-            <div className="text-[10px] text-slate-400 pt-2 border-t border-emerald-800">
-              Calculated on {harvestQuantityQtl} quintals output. Hold in cold storage for 20 days.
-            </div>
+      {/* ================================================== */}
+      {/* 5. CLEAN 60-DAY TIMELINE CHART */}
+      {/* ================================================== */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div>
+            <h3 className="font-extrabold text-base text-stone-900 font-heading">
+              Price Trajectory Timeline (Next 60 Days)
+            </h3>
+            <p className="text-xs text-stone-500">
+              Anticipated rate fluctuations across APMC markets.
+            </p>
           </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 w-fit">
+            Market Trend: {forecast.marketSentiment}
+          </span>
+        </div>
 
-          {/* AI Market Drivers & Catalysts */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <TrendingUp className="w-4 h-4 text-amber-600" />
-              <h3 className="font-extrabold text-sm text-slate-900 font-heading">
-                AI Market Catalysts & Drivers
-              </h3>
-            </div>
+        <div className="h-64 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#78716c' }} />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#78716c' }}
+                tickFormatter={(val) => `₹${val}`}
+                domain={['auto', 'auto']}
+              />
+              <Tooltip
+                formatter={(val: any) => [`₹${val} / Quintal (₹${(val / 100).toFixed(0)}/kg)`, 'Projected Rate']}
+                contentStyle={{ borderRadius: '12px', border: '1px solid #e7e5e4' }}
+              />
+              <Line
+                type="monotone"
+                dataKey="price"
+                stroke="#15803d"
+                strokeWidth={3}
+                dot={{ r: 5, fill: '#15803d', stroke: '#ffffff', strokeWidth: 2 }}
+                activeDot={{ r: 8, fill: '#d97706' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
 
-            <ul className="space-y-2 text-xs text-slate-600">
-              {forecast.factors.map((f, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
+        {/* Factors */}
+        <div className="pt-3 border-t border-stone-100 space-y-2">
+          <div className="text-xs font-bold text-stone-700">Market Drivers & Reasons:</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-stone-600">
+            {forecast.factors.map((factor, i) => (
+              <div key={i} className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" />
+                <span>{factor}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

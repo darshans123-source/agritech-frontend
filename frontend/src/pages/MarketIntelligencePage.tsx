@@ -19,14 +19,14 @@ import { useLanguage } from '../context/LanguageContext';
 import { MandiItem } from '../types';
 
 export const MarketIntelligencePage: React.FC = () => {
-  const { mandis } = useFarmData();
+  const { mandis, locationState, setIsLocationModalOpen } = useFarmData();
   const { t } = useLanguage();
 
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [calcQuantity, setCalcQuantity] = useState<number>(50); // quintals
   const [calcCrop, setCalcCrop] = useState('Tomato (Hybrid)');
 
-  const commodities = ['All', 'Tomato (Hybrid)', 'Paddy (Sona Masoori / BPT)', 'Onion (Red Nashik Quality)', 'Cotton (Medium Staple)', 'Wheat (Sharbati / Lokwan)'];
+  const commodities = ['All', 'Tomato (Hybrid)', 'Paddy (Rice)', 'Onion (Red Nashik Quality)', 'Cotton (Medium Staple)'];
 
   const filteredMandis = mandis.filter((m) =>
     selectedCommodity === 'All' ? true : m.commodity === selectedCommodity
@@ -61,9 +61,17 @@ export const MarketIntelligencePage: React.FC = () => {
             {t('marketIntelligence')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Live APMC arrivals, wholesale price tickers, demand-supply indexes, and net transport arbitrage.
+            Distances and freight calculated dynamically from <strong>{locationState.address.formatted}</strong>.
           </p>
         </div>
+
+        <button
+          onClick={() => setIsLocationModalOpen(true)}
+          className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+        >
+          <span>📍 {locationState.address.district}</span>
+          <span className="text-slate-400 font-normal">Change</span>
+        </button>
       </div>
 
       {/* 1. "BEST MARKET TO SELL" SMART CALCULATOR SPOTLIGHT */}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   UserProfile,
   Farm,
@@ -24,7 +24,6 @@ import {
   INITIAL_CROPS,
   INITIAL_TASKS,
   INITIAL_WEATHER,
-  INITIAL_MANDIS,
   INITIAL_SCHEMES,
   INITIAL_FINANCIAL_SUMMARY,
   INITIAL_TRANSACTIONS,
@@ -36,6 +35,41 @@ import {
   INITIAL_ACHIEVEMENTS
 } from '../constants/mockData';
 import { useToast } from './ToastContext';
+import {
+  LocationState,
+  getStoredLocation,
+  setStoredLocation,
+  getCurrentGPSCoordinates,
+  reverseGeocode,
+  AGRI_DISTRICT_CENTROIDS
+} from '../services/locationService';
+import { fetchLiveWeather } from '../services/weatherService';
+import { getNearbyMandisForLocation } from '../services/mandiService';
+import { api } from '../services/api';
+
+export interface AIFarmHealthScore {
+  overall: number;
+  cropHealth: number;
+  soilCondition: number;
+  weatherRisk: number;
+  irrigation: number;
+  marketOpportunity: number;
+  factors: {
+    name: string;
+    score: number;
+    weight: string;
+    impact: 'positive' | 'warning' | 'neutral';
+    description: string;
+  }[];
+}
+
+export interface AIBriefing {
+  title: string;
+  greeting: string;
+  summary: string;
+  bullets: string[];
+  generatedAt: string;
+}
 
 interface FarmDataContextType {
   user: UserProfile | null;
@@ -57,8 +91,38 @@ interface FarmDataContextType {
   toggleTask: (taskId: string) => void;
   addTask: (task: Omit<FarmTask, 'id' | 'completed'>) => void;
 
+  // Real-Time Location & Geolocation
+  locationState: LocationState;
+  requestGPSLocation: () => Promise<void>;
+  setManualLocation: (district: string, state: string, village?: string) => Promise<void>;
+  isLocationModalOpen: boolean;
+  setIsLocationModalOpen: (open: boolean) => void;
+
+  // Dynamic Weather & Market Telemetry
   weather: WeatherData;
+  isWeatherLive: boolean;
+  weatherLastUpdated: string;
+  refreshWeather: () => Promise<void>;
   mandis: MandiItem[];
+  nearbyMandis: MandiItem[];
+
+  // AI-Powered Farm Intelligence & Health
+  aiFarmHealth: AIFarmHealthScore;
+  aiBriefing: AIBriefing;
+  aiMonitoringStatus: {
+    isLive: boolean;
+    lastChecked: string;
+    activeSensors: number;
+    dataConfidence: string;
+  };
+
+  // AI Command Center
+  activePromptForAI: string | null;
+  openAIChatWithPrompt: (prompt: string) => void;
+  clearAIChatPrompt: () => void;
+  isAIChatOpen: boolean;
+  setIsAIChatOpen: (open: boolean) => void;
+
   schemes: GovernmentScheme[];
   applyForScheme: (schemeId: string) => void;
 
@@ -123,9 +187,262 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_TASKS;
   });
 
-  const [weather] = useState<WeatherData>(INITIAL_WEATHER);
-  const [mandis] = useState<MandiItem[]>(INITIAL_MANDIS);
+  // Location State
+  const [locationState, setLocationState] = useState<LocationState>(() => {
+    const stored = getStoredLocation();
+    if (stored) return stored;
 
+    // Graceful initial state with non-intrusive prompt
+    const initialDistrict = user?.district || 'Raichur';
+    const initialInfo = AGRI_DISTRICT_CENTROIDS[initialDistrict] || AGRI_DISTRICT_CENTROIDS['Raichur'];
+
+    return {
+      coordinates: { lat: initialInfo.lat, lng: initialInfo.lng },
+      address: {
+        village: initialInfo.village || 'Sindhanur',
+        district: initialDistrict,
+        state: initialInfo.state || 'Karnataka',
+        country: 'India',
+        formatted: `${initialInfo.village || 'Sindhanur'}, ${initialDistrict}, ${initialInfo.state || 'Karnataka'}`
+      },
+      source: 'default',
+      status: 'idle',
+      lastUpdated: 'Ready to detect'
+    };
+  });
+
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  // Real-Time Weather State
+  const [weather, setWeather] = useState<WeatherData>(INITIAL_WEATHER);
+  const [isWeatherLive, setIsWeatherLive] = useState(false);
+  const [weatherLastUpdated, setWeatherLastUpdated] = useState('2 min ago');
+
+  // Mandi items dynamically calculated from user's coordinates
+  const [mandis, setMandis] = useState<MandiItem[]>(() =>
+    getNearbyMandisForLocation(locationState.coordinates)
+  );
+
+  // AI Command Center
+  const [activePromptForAI, setActivePromptForAI] = useState<string | null>(null);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+
+  const openAIChatWithPrompt = (prompt: string) => {
+    setActivePromptForAI(prompt);
+    setIsAIChatOpen(true);
+  };
+
+  const clearAIChatPrompt = () => {
+    setActivePromptForAI(null);
+  };
+
+  // Weather fetcher based on active coordinates
+  const updateWeatherForCoords = useCallback(async (lat: number, lng: number) => {
+    try {
+      const liveData = await fetchLiveWeather(lat, lng);
+      setWeather(liveData);
+      setIsWeatherLive(true);
+      setWeatherLastUpdated('Just now');
+    } catch (error) {
+      console.warn('Using cached weather due to network limit', error);
+      setIsWeatherLive(false);
+    }
+  }, []);
+
+  // Request real GPS location from browser
+  const requestGPSLocation = async () => {
+    setLocationState((prev) => ({ ...prev, status: 'loading', errorMessage: undefined }));
+    showToast('📡 Requesting GPS satellite fix...', 'info');
+
+    try {
+      const coords = await getCurrentGPSCoordinates();
+      const address = await reverseGeocode(coords.lat, coords.lng);
+
+      const updated: LocationState = {
+        coordinates: coords,
+        address,
+        source: 'gps',
+        status: 'granted',
+        lastUpdated: 'Just now'
+      };
+
+      setLocationState(updated);
+      setStoredLocation(updated);
+
+      // Update user profile location details
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              village: address.village || prev.village,
+              district: address.district,
+              state: address.state
+            }
+          : null
+      );
+
+      // Recalculate dynamic mandis and weather
+      setMandis(getNearbyMandisForLocation(coords));
+      await updateWeatherForCoords(coords.lat, coords.lng);
+
+      showToast(`📍 GPS Fix acquired: ${address.formatted}`, 'success');
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Failed to detect GPS location';
+      const isDenied = errorMsg.includes('denied');
+
+      setLocationState((prev) => ({
+        ...prev,
+        status: isDenied ? 'denied' : 'error',
+        errorMessage: errorMsg
+      }));
+
+      showToast(
+        isDenied
+          ? 'Location permission denied. You can select your district manually.'
+          : errorMsg,
+        'error'
+      );
+    }
+  };
+
+  // Set manual location
+  const setManualLocation = async (district: string, state: string, village?: string) => {
+    const centroid = AGRI_DISTRICT_CENTROIDS[district] || {
+      lat: 16.2120,
+      lng: 77.3439,
+      state: state || 'Karnataka',
+      village: village || district
+    };
+
+    const updated: LocationState = {
+      coordinates: { lat: centroid.lat, lng: centroid.lng },
+      address: {
+        village: village || centroid.village || district,
+        district,
+        state: state || centroid.state,
+        country: 'India',
+        formatted: `${village || centroid.village || district}, ${district}, ${state || centroid.state}`
+      },
+      source: 'manual',
+      status: 'granted',
+      lastUpdated: 'Just now'
+    };
+
+    setLocationState(updated);
+    setStoredLocation(updated);
+
+    setUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            village: updated.address.village || prev.village,
+            district,
+            state: state || centroid.state
+          }
+        : null
+    );
+
+    setMandis(getNearbyMandisForLocation(updated.coordinates));
+    await updateWeatherForCoords(centroid.lat, centroid.lng);
+
+    showToast(`📍 Location updated to ${district}, ${state || centroid.state}`, 'success');
+  };
+
+  const refreshWeather = async () => {
+    if (locationState.coordinates) {
+      showToast('Refreshing micro-climate weather telemetry...', 'info');
+      await updateWeatherForCoords(locationState.coordinates.lat, locationState.coordinates.lng);
+      showToast('Weather updated!', 'success');
+    }
+  };
+
+  // Initial load of live weather if coordinates exist
+  useEffect(() => {
+    if (locationState.coordinates) {
+      updateWeatherForCoords(locationState.coordinates.lat, locationState.coordinates.lng);
+    }
+  }, [locationState.coordinates, updateWeatherForCoords]);
+
+  // AI Farm Health calculation
+  const aiFarmHealth: AIFarmHealthScore = {
+    overall: 94,
+    cropHealth: Math.round(
+      crops.length > 0 ? crops.reduce((acc, c) => acc + c.healthScore, 0) / crops.length : 94
+    ),
+    soilCondition: 91,
+    weatherRisk: weather.rainProbability > 60 ? 84 : 95,
+    irrigation: weather.soilMoisture > 50 ? 96 : 88,
+    marketOpportunity: 92,
+    factors: [
+      {
+        name: 'Crop Foliar Vigor',
+        score: 96,
+        weight: '30%',
+        impact: 'positive',
+        description: 'Multi-spectral satellite NDVI & AI Crop Doctor scan confirm healthy chlorophyll index.'
+      },
+      {
+        name: 'Soil NPK & Moisture',
+        score: 91,
+        weight: '25%',
+        impact: 'positive',
+        description: 'Capacitive sensors report 58% moisture (optimal field capacity) with stable pH (6.8).'
+      },
+      {
+        name: 'Micro-Climate Risk',
+        score: weather.rainProbability > 60 ? 84 : 95,
+        weight: '20%',
+        impact: weather.rainProbability > 60 ? 'warning' : 'positive',
+        description: `Local wind calm (${weather.windSpeed} km/h). Rain probability is ${weather.rainProbability}%.`
+      },
+      {
+        name: 'Irrigation Automation',
+        score: 95,
+        weight: '15%',
+        impact: 'positive',
+        description: 'Smart Pump is in AUTO mode with moisture threshold locks active.'
+      },
+      {
+        name: 'Market Price Opportunity',
+        score: 92,
+        weight: '10%',
+        impact: 'positive',
+        description: 'Regional APMC Mandis show positive upward price trends for your harvested crops.'
+      }
+    ]
+  };
+
+  // AI Daily Briefing generation
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const aiBriefing: AIBriefing = {
+    title: 'AI Farm Briefing',
+    greeting: `${getGreeting()}, ${user?.name || 'Farmer'}`,
+    summary: `KrishiSmart AI has synthesized real-time telemetry from your ${locationState.address.district} farm parcels. Your crops are exhibiting high vegetative vigor with calm micro-climate conditions today.`,
+    bullets: [
+      `Your active crops (${crops.map((c) => c.name).join(', ')}) are currently healthy with an average vigor of ${aiFarmHealth.cropHealth}%.`,
+      weather.rainProbability > 40
+        ? `Rain expected soon (${weather.rainProbability}% probability), so scheduled irrigation can be reduced to save power.`
+        : `Weather is clear (${weather.temp}°C, humidity ${weather.humidity}%). Optimal foliar spray window starts at ${weather.sprayingAdvisory.bestWindow}.`,
+      `Tomato prices in nearby mandis are trending upward (+7.1% in Kolar & regional yards).`,
+      `Your Paddy plot requires monitoring for drainage furrows ahead of weekly showers.`
+    ],
+    generatedAt: 'Just now'
+  };
+
+  const aiMonitoringStatus = {
+    isLive: true,
+    lastChecked: '2 min ago',
+    activeSensors: 7,
+    dataConfidence: '99.4%'
+  };
+
+  // Existing modules state
   const [schemes, setSchemes] = useState<GovernmentScheme[]>(() => {
     const saved = localStorage.getItem('krishi_schemes');
     return saved ? JSON.parse(saved) : INITIAL_SCHEMES;
@@ -165,23 +482,25 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [orders, setOrders] = useState<StoreOrder[]>(() => {
     const saved = localStorage.getItem('krishi_orders');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'ORD-84920',
-        date: '2026-08-12',
-        items: [{ product: INITIAL_STORE_PRODUCTS[0], quantity: 2 }],
-        totalAmount: 2700,
-        deliveryAddress: 'Pandavapura Mandya Farm Gate 2',
-        status: 'Out for Delivery',
-        paymentMethod: 'UPI (Google Pay)',
-        trackingSteps: [
-          { title: 'Order Confirmed', date: 'Aug 12, 10:00 AM', completed: true },
-          { title: 'Dispatched from Hub', date: 'Aug 13, 02:30 PM', completed: true },
-          { title: 'Out for Delivery (Mandya Courier)', date: 'Aug 19, 08:00 AM', completed: true },
-          { title: 'Delivered', date: 'Expected by 5 PM', completed: false }
-        ]
-      }
-    ];
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            id: 'ORD-84920',
+            date: '2026-08-12',
+            items: [{ product: INITIAL_STORE_PRODUCTS[0], quantity: 2 }],
+            totalAmount: 2700,
+            deliveryAddress: `${locationState.address.village || 'Farm Gate'}, ${locationState.address.district}`,
+            status: 'Out for Delivery',
+            paymentMethod: 'UPI (Google Pay)',
+            trackingSteps: [
+              { title: 'Order Confirmed', date: 'Aug 12, 10:00 AM', completed: true },
+              { title: 'Dispatched from Hub', date: 'Aug 13, 02:30 PM', completed: true },
+              { title: 'Out for Delivery', date: 'Aug 19, 08:00 AM', completed: true },
+              { title: 'Delivered', date: 'Expected by 5 PM', completed: false }
+            ]
+          }
+        ];
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
@@ -194,7 +513,7 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_ACHIEVEMENTS;
   });
 
-  // Save to localStorage
+  // Persistence to localStorage
   useEffect(() => {
     if (user) localStorage.setItem('krishi_user', JSON.stringify(user));
   }, [user]);
@@ -236,6 +555,47 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('krishi_orders', JSON.stringify(orders));
   }, [orders]);
 
+  // Hydrate data from Backend REST API on mount
+  useEffect(() => {
+    let isMounted = true;
+    const hydrateFromBackend = async () => {
+      try {
+        const [cropsRes, farmsRes, tasksRes, pumpRes, iotRes] = await Promise.allSettled([
+          api.crops.getAll(),
+          api.farms.getAll(),
+          api.crops.getTasks(),
+          api.pumps.getAll(),
+          api.iot.getDevices()
+        ]);
+
+        if (!isMounted) return;
+
+        if (cropsRes.status === 'fulfilled' && cropsRes.value?.success && cropsRes.value?.data?.length) {
+          setCrops(cropsRes.value.data);
+        }
+        if (farmsRes.status === 'fulfilled' && farmsRes.value?.success && farmsRes.value?.data?.length) {
+          setFarms(farmsRes.value.data);
+        }
+        if (tasksRes.status === 'fulfilled' && tasksRes.value?.success && tasksRes.value?.data?.length) {
+          setTasks(tasksRes.value.data);
+        }
+        if (pumpRes.status === 'fulfilled' && pumpRes.value?.success && pumpRes.value?.data?.length) {
+          setSmartPump(pumpRes.value.data[0]);
+        }
+        if (iotRes.status === 'fulfilled' && iotRes.value?.success && iotRes.value?.data?.length) {
+          setIotDevices(iotRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Backend API offline or unreachable, running in offline fallback mode:', err);
+      }
+    };
+
+    hydrateFromBackend();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Gamification XP Handler
   const addXP = (amount: number, reason?: string) => {
     if (!user) return;
@@ -253,27 +613,26 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
 
     if (leveledUp) {
-      showToast(`🎉 Level Up! You are now Level ${newLevel} Agri-Master!`, 'success');
+      showToast(`🎉 Level Up! You are now a Level ${newLevel} Tech Farmer!`, 'success');
     } else if (reason) {
       showToast(`+${amount} XP: ${reason}`, 'success');
     }
   };
 
-  // User Auth & Onboarding
+  // User Actions
   const login = (email: string, name?: string) => {
-    const updatedUser: UserProfile = {
-      ...INITIAL_USER,
+    setUser((prev) => ({
+      ...(prev || INITIAL_USER),
       email,
-      name: name || INITIAL_USER.name
-    };
-    setUser(updatedUser);
-    showToast(`Welcome back, ${updatedUser.name}! 🌱`, 'success');
+      name: name || prev?.name || 'Darshan Patil'
+    }));
+    showToast(`Welcome back, ${name || 'Farmer'}!`, 'success');
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('krishi_user');
-    showToast('Signed out successfully', 'info');
+    showToast('Logged out successfully', 'info');
   };
 
   const updateUser = (updated: Partial<UserProfile>) => {
@@ -282,221 +641,250 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const completeOnboarding = (data: Partial<UserProfile>) => {
-    const newUser: UserProfile = {
-      ...INITIAL_USER,
-      ...data,
-      level: 1,
-      xp: 250,
-      streakDays: 1,
-      joinedDate: new Date().toISOString().split('T')[0]
-    };
-    setUser(newUser);
-    addXP(100, 'Completed Onboarding');
-    showToast('Welcome to KrishiSmart AI! Your personalized farm is ready.', 'success');
+    setUser((prev) => {
+      const base = prev || INITIAL_USER;
+      return {
+        ...base,
+        ...data,
+        level: 1,
+        xp: 100,
+        isPremium: true
+      };
+    });
+    addXP(150, 'Completed Onboarding & Farm Setup');
+    showToast('Farm successfully registered in KrishiSmart AI!', 'success');
   };
 
-  // Farms
-  const addFarm = (farmData: Omit<Farm, 'id'>) => {
-    const newFarm: Farm = {
-      ...farmData,
-      id: `farm-${Date.now()}`
-    };
+  // Farms & Crops
+  const addFarm = async (farmData: Omit<Farm, 'id'>) => {
+    const newFarm: Farm = { ...farmData, id: `farm-${Date.now()}` };
     setFarms((prev) => [...prev, newFarm]);
-    addXP(150, 'Registered New Farm');
-    showToast(`Farm "${newFarm.name}" registered successfully!`, 'success');
+    addXP(100, 'Registered New Farm Parcel');
+    showToast(`Farm "${farmData.name}" added successfully!`, 'success');
+    try {
+      await api.farms.create(farmData);
+    } catch (e) {
+      console.warn('Backend sync for farm creation deferred:', e);
+    }
   };
 
-  // Crops
-  const addCrop = (cropData: Omit<Crop, 'id' | 'timeline'>) => {
+  const addCrop = async (cropData: Omit<Crop, 'id' | 'timeline'>) => {
     const newCrop: Crop = {
       ...cropData,
       id: `crop-${Date.now()}`,
       timeline: [
-        { id: 'seed', name: 'Seed Treatment & Nursery', status: 'completed', progress: 100, estimatedDate: 'Day 1-15', notes: 'Sowing started', tasks: ['Seed treatment'] },
-        { id: 'germination', name: 'Germination & Early Sprout', status: 'active', progress: 50, estimatedDate: 'Day 16-30', notes: 'Sprouting observed', tasks: ['First light irrigation'] },
-        { id: 'growth', name: 'Vegetative Growth', status: 'upcoming', progress: 0, estimatedDate: 'Day 31-75', notes: 'Tillering & branching', tasks: ['Nutrient top dressing'] },
-        { id: 'flowering', name: 'Flowering & Grain/Fruit Formation', status: 'upcoming', progress: 0, estimatedDate: 'Day 76-110', notes: 'Maintain moisture', tasks: ['Pest check'] },
-        { id: 'harvest', name: 'Harvesting & Grading', status: 'upcoming', progress: 0, estimatedDate: 'Day 111+', notes: 'Final harvest', tasks: ['Mandi dispatch'] }
+        { id: 'seed', name: 'Seed Treatment', status: 'completed', progress: 100, estimatedDate: 'Day 1-15', notes: 'Initial germination', tasks: ['Seed Selection'] },
+        { id: 'germination', name: 'Vegetative Growth', status: 'active', progress: 35, estimatedDate: 'Day 16-45', notes: 'Active growth', tasks: ['Weed check'] },
+        { id: 'growth', name: 'Canopy Maturation', status: 'upcoming', progress: 0, estimatedDate: 'Day 46-75', notes: 'Canopy development', tasks: ['Foliar feed'] },
+        { id: 'flowering', name: 'Flowering & Fruiting', status: 'upcoming', progress: 0, estimatedDate: 'Day 76-100', notes: 'Flowering stage', tasks: ['Moisture check'] },
+        { id: 'harvest', name: 'Harvest & Mandi Sale', status: 'upcoming', progress: 0, estimatedDate: 'Harvest', notes: 'Mandi transport', tasks: ['Harvest'] }
       ]
     };
     setCrops((prev) => [...prev, newCrop]);
-    addXP(200, `Added crop ${newCrop.name}`);
-    showToast(`Added ${newCrop.name} (${newCrop.variety}) to your active farm portfolio!`, 'success');
+    addXP(80, `Added Crop: ${cropData.name}`);
+    showToast(`Crop "${cropData.name}" added to cultivation!`, 'success');
+    try {
+      await api.crops.create(cropData);
+    } catch (e) {
+      console.warn('Backend sync for crop creation deferred:', e);
+    }
   };
 
-  const advanceCropStage = (cropId: string, stageId: Crop['currentStage']) => {
+  const advanceCropStage = async (cropId: string, stageId: Crop['currentStage']) => {
     setCrops((prev) =>
       prev.map((crop) => {
         if (crop.id !== cropId) return crop;
-        const stageOrder: Array<Crop['currentStage']> = ['seed', 'germination', 'growth', 'flowering', 'harvest'];
-        const targetIndex = stageOrder.indexOf(stageId);
-
-        const newTimeline = crop.timeline.map((stg) => {
-          const stgIndex = stageOrder.indexOf(stg.id);
-          if (stgIndex < targetIndex) {
-            return { ...stg, status: 'completed' as const, progress: 100 };
-          } else if (stgIndex === targetIndex) {
-            return { ...stg, status: 'active' as const, progress: 60 };
-          } else {
-            return { ...stg, status: 'upcoming' as const, progress: 0 };
-          }
-        });
-
         return {
           ...crop,
           currentStage: stageId,
-          timeline: newTimeline
+          healthScore: Math.min(100, crop.healthScore + 2)
         };
       })
     );
-    addXP(80, 'Updated Crop Growth Stage');
-    showToast(`Crop growth stage updated to ${stageId.toUpperCase()}`, 'success');
+    addXP(50, 'Advanced Crop Growth Stage');
+    showToast(`Crop progress updated to ${stageId}`, 'success');
+    try {
+      await api.crops.advanceStage(cropId, stageId);
+    } catch (e) {
+      console.warn('Backend sync for crop stage deferred:', e);
+    }
   };
 
-  const deleteCrop = (cropId: string) => {
+  const deleteCrop = async (cropId: string) => {
     setCrops((prev) => prev.filter((c) => c.id !== cropId));
-    showToast('Crop record removed', 'info');
+    showToast('Crop removed from farm monitoring', 'info');
+    try {
+      await api.crops.delete(cropId);
+    } catch (e) {
+      console.warn('Backend sync for crop deletion deferred:', e);
+    }
   };
 
   // Tasks
-  const toggleTask = (taskId: string) => {
+  const toggleTask = async (taskId: string) => {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === taskId) {
-          const willComplete = !t.completed;
-          if (willComplete) {
-            addXP(t.xpReward, `Completed task: ${t.title}`);
-          }
-          return { ...t, completed: willComplete };
+          const next = !t.completed;
+          if (next) addXP(t.xpReward, `Completed Task: ${t.title}`);
+          return { ...t, completed: next };
         }
         return t;
       })
     );
+    try {
+      await api.crops.toggleTask(taskId);
+    } catch (e) {
+      console.warn('Backend sync for task toggle deferred:', e);
+    }
   };
 
-  const addTask = (taskData: Omit<FarmTask, 'id' | 'completed'>) => {
+  const addTask = async (taskData: Omit<FarmTask, 'id' | 'completed'>) => {
     const newTask: FarmTask = {
       ...taskData,
       id: `task-${Date.now()}`,
       completed: false
     };
     setTasks((prev) => [newTask, ...prev]);
-    showToast('New farm task scheduled!', 'success');
+    showToast('Task added to daily farm plan', 'success');
+    try {
+      await api.crops.addTask(taskData);
+    } catch (e) {
+      console.warn('Backend sync for task creation deferred:', e);
+    }
   };
 
   // Schemes
-  const applyForScheme = (schemeId: string) => {
+  const applyForScheme = async (schemeId: string) => {
     setSchemes((prev) =>
-      prev.map((s) => (s.id === schemeId ? { ...s, appliedStatus: 'In Progress' } : s))
+      prev.map((s) => (s.id === schemeId ? { ...s, applicationStatus: 'Applied' } : s))
     );
-    addXP(100, 'Applied for Government Scheme');
-    showToast('Scheme application initiated! Track status in your Scheme Finder.', 'success');
+    addXP(75, 'Applied for Government Agro Scheme');
+    showToast('Application submitted successfully to portal!', 'success');
+    try {
+      await api.schemes.apply(schemeId);
+    } catch (e) {
+      console.warn('Backend sync for scheme application deferred:', e);
+    }
   };
 
-  // Finance
-  const addTransaction = (txData: Omit<FinancialTransaction, 'id'>) => {
-    const newTx: FinancialTransaction = {
-      ...txData,
-      id: `tx-${Date.now()}`
-    };
+  // Financials
+  const addTransaction = (tx: Omit<FinancialTransaction, 'id'>) => {
+    const newTx: FinancialTransaction = { ...tx, id: `tx-${Date.now()}` };
     setTransactions((prev) => [newTx, ...prev]);
 
     setFinancialSummary((prev) => {
-      const isInc = newTx.type === 'Income';
-      const newInc = isInc ? prev.totalIncome + newTx.amount : prev.totalIncome;
-      const newExp = !isInc ? prev.totalExpenses + newTx.amount : prev.totalExpenses;
-      const newNet = newInc - newExp;
+      const isIncome = tx.type === 'Income';
+      const inc = isIncome ? prev.totalIncome + tx.amount : prev.totalIncome;
+      const exp = !isIncome ? prev.totalExpenses + tx.amount : prev.totalExpenses;
+      const profit = inc - exp;
       return {
         ...prev,
-        totalIncome: newInc,
-        totalExpenses: newExp,
-        netProfit: newNet,
-        profitMargin: Number(((newNet / (newInc || 1)) * 100).toFixed(1))
+        totalIncome: inc,
+        totalExpenses: exp,
+        netProfit: profit,
+        profitMargin: inc > 0 ? Math.round((profit / inc) * 100) : 0
       };
     });
 
-    addXP(30, 'Recorded Financial Entry');
-    showToast(`Recorded ${newTx.type} of ₹${newTx.amount.toLocaleString('en-IN')}`, 'success');
+    addXP(30, 'Recorded Financial Ledger Entry');
+    showToast('Transaction recorded in KrishiNidhi', 'success');
   };
 
-  // IoT Devices
-  const addIoTDevice = (devData: Omit<IoTDevice, 'id' | 'lastPing' | 'status'>) => {
-    const newDev: IoTDevice = {
-      ...devData,
+  // IoT Devices & Pumps
+  const addIoTDevice = (device: Omit<IoTDevice, 'id' | 'lastPing' | 'status'>) => {
+    const newDevice: IoTDevice = {
+      ...device,
       id: `iot-${Date.now()}`,
       status: 'Normal',
       lastPing: 'Just now'
     };
-    setIotDevices((prev) => [...prev, newDev]);
-    addXP(120, 'Connected New IoT Device');
-    showToast(`Connected IoT node "${newDev.name}"`, 'success');
+    setIotDevices((prev) => [...prev, newDevice]);
+    addXP(60, `Paired Sensor: ${device.name}`);
+    showToast(`Sensor paired with farm telemetry node!`, 'success');
   };
 
-  // Smart Pump
-  const togglePumpStatus = (status?: 'ON' | 'OFF') => {
-    setSmartPump((prev) => {
-      const newStatus = status || (prev.status === 'ON' ? 'OFF' : 'ON');
-      const newFlow = newStatus === 'ON' ? 85 : 0;
-      return {
-        ...prev,
-        status: newStatus,
-        currentFlowLpm: newFlow,
-        dailyWaterLitres: newStatus === 'ON' ? prev.dailyWaterLitres + 500 : prev.dailyWaterLitres
-      };
-    });
-    showToast(`Smart Pump turned ${status || (smartPump.status === 'ON' ? 'OFF' : 'ON')}`, 'info');
+  const togglePumpStatus = async (status?: 'ON' | 'OFF') => {
+    const nextStatus = status ? status : smartPump.status === 'ON' ? 'OFF' : 'ON';
+    setSmartPump((prev) => ({
+      ...prev,
+      status: nextStatus
+    }));
+    showToast(
+      nextStatus === 'ON'
+        ? '⚡ Smart Pump started. High pressure drip active.'
+        : '⏹️ Smart Pump stopped. Power conserved.',
+      nextStatus === 'ON' ? 'success' : 'info'
+    );
+    try {
+      await api.pumps.control(smartPump.id, { status: nextStatus });
+    } catch (e) {
+      console.warn('Backend sync for pump status deferred:', e);
+    }
   };
 
-  const setPumpMode = (mode: 'MANUAL' | 'AUTO' | 'SCHEDULE') => {
+  const setPumpMode = async (mode: 'MANUAL' | 'AUTO' | 'SCHEDULE') => {
     setSmartPump((prev) => ({ ...prev, mode }));
-    showToast(`Smart Irrigation mode set to ${mode}`, 'success');
+    showToast(`Pump mode switched to ${mode}`, 'info');
+    try {
+      await api.pumps.control(smartPump.id, { mode });
+    } catch (e) {
+      console.warn('Backend sync for pump mode deferred:', e);
+    }
   };
 
-  const updatePumpThreshold = (soilMoistureThreshold: number) => {
-    setSmartPump((prev) => ({ ...prev, soilMoistureThreshold }));
-    showToast(`Auto-pump trigger threshold updated to ${soilMoistureThreshold}%`, 'success');
+  const updatePumpThreshold = async (threshold: number) => {
+    setSmartPump((prev) => ({ ...prev, soilMoistureThreshold: threshold }));
+    showToast(`Auto-start moisture threshold set to ${threshold}%`, 'info');
+    try {
+      await api.pumps.control(smartPump.id, { threshold });
+    } catch (e) {
+      console.warn('Backend sync for pump threshold deferred:', e);
+    }
   };
 
   // Drone Plans
-  const addDronePlan = (planData: Omit<DronePlan, 'id' | 'coverageProgress' | 'status'>) => {
+  const addDronePlan = (plan: Omit<DronePlan, 'id' | 'coverageProgress' | 'status'>) => {
     const newPlan: DronePlan = {
-      ...planData,
+      ...plan,
       id: `drone-${Date.now()}`,
       status: 'Scheduled',
       coverageProgress: 0
     };
     setDronePlans((prev) => [newPlan, ...prev]);
-    addXP(100, 'Created DroneSpray Mission Plan');
-    showToast(`Drone flight plan for ${newPlan.fieldName} created!`, 'success');
+    addXP(70, 'Configured Autonomous Drone Flight Path');
+    showToast('Drone mission scheduled and telemetry approved', 'success');
   };
 
   const executeDroneMission = (planId: string) => {
     setDronePlans((prev) =>
       prev.map((p) => (p.id === planId ? { ...p, status: 'In Flight', coverageProgress: 25 } : p))
     );
-    showToast('Drone mission launched! Live telemetry streaming...', 'info');
+    showToast('🚁 Drone launched! Real-time flight telemetry streaming...', 'info');
 
     setTimeout(() => {
       setDronePlans((prev) =>
         prev.map((p) => (p.id === planId ? { ...p, status: 'Completed', coverageProgress: 100 } : p))
       );
-      addXP(150, 'Completed Drone Spray Mission');
-      showToast('Drone mission finished successfully! 100% field canopy covered.', 'success');
-    }, 4500);
+      addXP(100, 'Drone Spray Mission Completed');
+      showToast('Drone flight completed. 100% parcel coverage achieved.', 'success');
+    }, 4000);
   };
 
-  // Krishi Store E-Commerce
+  // E-Commerce Store & Cart
   const addToCart = (product: StoreProduct, quantity = 1) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
         );
       }
       return [...prev, { product, quantity }];
     });
-    showToast(`Added ${product.name} to Cart`, 'success');
+    showToast(`Added ${product.name} to cart`, 'success');
   };
 
   const removeFromCart = (productId: string) => {
@@ -519,8 +907,10 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const placeOrder = (deliveryAddress: string, paymentMethod: string) => {
-    if (cart.length === 0) return;
-    const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const total = cart.reduce(
+      (sum, item) => sum + item.product.price * item.quantity,
+      0
+    );
     const newOrder: StoreOrder = {
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
       date: new Date().toISOString().split('T')[0],
@@ -530,16 +920,16 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'Processing',
       paymentMethod,
       trackingSteps: [
-        { title: 'Order Confirmed', date: 'Just now', completed: true },
-        { title: 'Dispatched from Warehouse', date: 'Expected Tomorrow', completed: false },
-        { title: 'Out for Delivery', date: 'In 2 days', completed: false },
-        { title: 'Delivered to Farm Gate', date: 'In 3 days', completed: false }
+        { title: 'Order Confirmed', date: 'Today, Just now', completed: true },
+        { title: 'Dispatched from Warehouse Hub', date: 'Tomorrow', completed: false },
+        { title: 'Out for Delivery to Farm Gate', date: 'In 2 days', completed: false },
+        { title: 'Delivered', date: 'In 3 days', completed: false }
       ]
     };
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
-    addXP(100, 'Placed Krishi Store Order');
-    showToast(`Order #${newOrder.id} placed successfully! Doorstep delivery to ${deliveryAddress}`, 'success');
+    addXP(120, 'Ordered Agri Inputs via KrishiStore');
+    showToast('Order placed successfully! Delivery tracking initiated.', 'success');
   };
 
   // Notifications
@@ -579,8 +969,25 @@ export const FarmDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         tasks,
         toggleTask,
         addTask,
+        locationState,
+        requestGPSLocation,
+        setManualLocation,
+        isLocationModalOpen,
+        setIsLocationModalOpen,
         weather,
+        isWeatherLive,
+        weatherLastUpdated,
+        refreshWeather,
         mandis,
+        nearbyMandis: mandis,
+        aiFarmHealth,
+        aiBriefing,
+        aiMonitoringStatus,
+        activePromptForAI,
+        openAIChatWithPrompt,
+        clearAIChatPrompt,
+        isAIChatOpen,
+        setIsAIChatOpen,
         schemes,
         applyForScheme,
         financialSummary,

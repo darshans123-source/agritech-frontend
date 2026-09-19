@@ -86,25 +86,25 @@ export const AIHubPage: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-1 border border-emerald-200">
             <BrainCircuit className="w-3.5 h-3.5" />
-            <span>Krishi AI Engine 2.0</span>
+            <span>Farm Intelligence Advisor</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">
-            {t('aiHub')}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-heading">
+            AI Advisor & Crop Health
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            AI Crop Doctor, Soil Chemical Balancer, Crop Recommendations, and Yield Forecasters.
+          <p className="text-xs sm:text-sm text-stone-500">
+            Crop disease diagnosis, soil health guidance, and customized fertilizer recommendations.
           </p>
         </div>
       </div>
 
       {/* Feature Sub-Navigation Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+      <div className="flex gap-2 border-b border-stone-200 overflow-x-auto pb-1">
         {[
-          { id: 'doctor', label: 'AI Crop Doctor', icon: Camera },
-          { id: 'soil', label: 'Soil Health & NPK Lab', icon: FlaskConical },
-          { id: 'recommendation', label: 'Crop Recommendation', icon: Sprout },
-          { id: 'fertilizer', label: 'Fertilizer Calculator', icon: Calculator },
-          { id: 'yield', label: 'Yield Predictor', icon: TrendingUp },
+          { id: 'doctor', label: 'Crop Doctor (Scan)', icon: Camera },
+          { id: 'soil', label: 'Soil Health', icon: FlaskConical },
+          { id: 'recommendation', label: 'Crop Advice', icon: Sprout },
+          { id: 'fertilizer', label: "Today's Recommendation", icon: Calculator },
+          { id: 'yield', label: 'Yield Estimate', icon: TrendingUp },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -112,10 +112,10 @@ export const AIHubPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 isActive
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -198,22 +198,22 @@ export const AIHubPage: React.FC = () => {
                 <div className="bg-white rounded-3xl border border-slate-200 p-12 shadow-xs text-center space-y-4 flex flex-col items-center justify-center min-h-[420px]">
                   <div className="w-16 h-16 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
                   <div>
-                    <h4 className="font-extrabold text-base text-slate-900 font-heading">
-                      AI Multimodal Pathology Diagnostic Running...
+                    <h4 className="font-extrabold text-base text-stone-900 font-heading">
+                      Analyzing Crop Health...
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                      Comparing leaf foliar cellular patterns against 120+ ICAR & international plant pathology databases.
+                    <p className="text-xs text-stone-500 mt-1 max-w-sm">
+                      Identifying symptoms and preparing treatment recommendations.
                     </p>
                   </div>
                 </div>
               ) : diagnosticResult ? (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-6">
+                <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-2xs space-y-6">
                   {/* Top Result Banner */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-4">
                     <div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                             diagnosticResult.severity === 'Severe'
                               ? 'bg-rose-100 text-rose-800'
                               : diagnosticResult.severity === 'Moderate'
@@ -223,43 +223,43 @@ export const AIHubPage: React.FC = () => {
                         >
                           {diagnosticResult.severity} Severity
                         </span>
-                        <span className="text-xs text-slate-500 font-semibold">
+                        <span className="text-xs text-stone-500 font-semibold">
                           Confidence: <strong className="text-emerald-700">{diagnosticResult.confidence}%</strong>
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-black text-slate-900 font-heading mt-1">
+                      <h3 className="text-xl font-black text-stone-900 font-heading mt-1">
                         {diagnosticResult.diseaseName}
                       </h3>
-                      <p className="text-xs text-slate-400 italic font-mono">
-                        {diagnosticResult.scientificName} • {diagnosticResult.cropType}
+                      <p className="text-xs text-stone-500 italic">
+                        {diagnosticResult.cropType} • {diagnosticResult.scientificName}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex flex-col items-center justify-center font-black">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-700 text-white flex flex-col items-center justify-center font-black">
                         <span className="text-sm">{Math.round(diagnosticResult.confidence)}%</span>
                         <span className="text-[8px] uppercase tracking-wider text-emerald-200">Match</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Pathology Explanation */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
-                    <div className="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                  {/* Crop Health Explanation */}
+                  <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs">
+                    <div className="font-bold text-stone-800 mb-1 flex items-center gap-1.5">
                       <ShieldAlert className="w-4 h-4 text-amber-600" />
-                      <span>Pathology & Symptoms</span>
+                      <span>Crop Health & Symptoms</span>
                     </div>
-                    <p className="text-slate-600 leading-relaxed">{diagnosticResult.pathology}</p>
+                    <p className="text-stone-600 leading-relaxed">{diagnosticResult.pathology}</p>
                   </div>
 
                   {/* Treatments Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Organic Treatment */}
-                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-xs">
-                        <Leaf className="w-4 h-4 text-emerald-600" />
-                        <span>Organic & Biological Treatment</span>
+                        <Leaf className="w-4 h-4 text-emerald-700" />
+                        <span>Farm Advice: Organic Remedy</span>
                       </div>
                       <ul className="space-y-1 text-xs text-emerald-800">
                         {diagnosticResult.organicTreatment.map((t, idx) => (
@@ -272,10 +272,10 @@ export const AIHubPage: React.FC = () => {
                     </div>
 
                     {/* Chemical Control */}
-                    <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-2">
+                    <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-blue-900 text-xs">
-                        <FlaskConical className="w-4 h-4 text-blue-600" />
-                        <span>Recommended Chemical Remedy</span>
+                        <FlaskConical className="w-4 h-4 text-blue-700" />
+                        <span>Today's Recommendation: Treatment</span>
                       </div>
                       <ul className="space-y-1 text-xs text-blue-800">
                         {diagnosticResult.chemicalTreatment.map((t, idx) => (
@@ -289,9 +289,9 @@ export const AIHubPage: React.FC = () => {
                   </div>
 
                   {/* Prevention Protocol */}
-                  <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-2">
+                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
                     <div className="font-bold text-amber-900 text-xs">
-                      Preventive Protocol for Next Season
+                      Possible Risk Prevention
                     </div>
                     <ul className="space-y-1 text-xs text-amber-800">
                       {diagnosticResult.preventiveMeasures.map((p, idx) => (

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   Sprout,
+  Wheat,
   BrainCircuit,
   Coins,
   TrendingUp,
@@ -12,10 +13,7 @@ import {
   Activity,
   Droplets,
   ShoppingBag,
-  Award,
   Crown,
-  User,
-  Sparkles,
   ChevronRight,
   Flame
 } from 'lucide-react';
@@ -38,43 +36,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useLanguage();
   const { user, crops, tasks, isProUnlocked } = useFarmData();
 
-  const activeCropsCount = crops.length;
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
   const navItems = [
     {
-      group: 'Core Operations',
+      group: 'MAIN',
       items: [
-        { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard, badge: null },
-        { id: 'myFarms', label: t('myFarms'), icon: Sprout, badge: `${activeCropsCount} Crops` },
-        { id: 'aiHub', label: t('aiHub'), icon: BrainCircuit, badge: 'AI Doctor', isHighlight: true },
-        { id: 'weather', label: t('weatherCenter'), icon: CloudSun, badge: null },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'myFarms', label: 'My Farm', icon: Sprout },
+        { id: 'crops', label: 'Crops', icon: Wheat },
+        { id: 'aiHub', label: 'AI Advisor', icon: BrainCircuit },
+        { id: 'weather', label: 'Weather', icon: CloudSun },
       ]
     },
     {
-      group: 'Smart Intelligence & Market',
+      group: 'SMART FARM',
       items: [
-        { id: 'krishiBhavishya', label: t('krishiBhavishya'), icon: TrendingUp, badge: 'Time Machine', isPro: true },
-        { id: 'market', label: t('marketIntelligence'), icon: Store, badge: 'Mandi Live' },
-        { id: 'govtSchemes', label: t('govtSchemes'), icon: Landmark, badge: 'Finder' },
-        { id: 'finance', label: t('krishiNidhi'), icon: Coins, badge: null },
+        { id: 'market', label: 'Market', icon: Store },
+        { id: 'finance', label: 'Finance', icon: Coins },
+        { id: 'govtSchemes', label: 'Government Schemes', icon: Landmark },
+        { id: 'krishiBhavishya', label: 'KrishiBhavishya', icon: TrendingUp },
       ]
     },
     {
-      group: 'Precision Tech & Automation',
+      group: 'TECHNOLOGY',
       items: [
-        { id: 'drone', label: t('droneSpray'), icon: Plane, badge: 'Simulation' },
-        { id: 'iot', label: t('smartFarmIot'), icon: Activity, badge: 'Live Telemetry' },
-        { id: 'pump', label: t('smartPump'), icon: Droplets, badge: 'Auto Drip' },
-        { id: 'store', label: t('krishiStore'), icon: ShoppingBag, badge: 'Agri Mart' },
+        { id: 'drone', label: 'Drone', icon: Plane },
+        { id: 'iot', label: 'IoT', icon: Activity },
+        { id: 'pump', label: 'Smart Pump', icon: Droplets },
       ]
     },
     {
-      group: 'Growth & Rewards',
+      group: 'STORE',
       items: [
-        { id: 'journey', label: t('krishiJourney'), icon: Award, badge: `Lvl ${user?.level || 1}` },
-        { id: 'premium', label: t('premium'), icon: Crown, badge: isProUnlocked ? 'Active' : 'Upgrade', isGold: true },
-        { id: 'profile', label: t('profile'), icon: User, badge: null },
+        { id: 'store', label: 'Krishi Store', icon: ShoppingBag },
+        { id: 'premium', label: 'Premium', icon: Crown },
       ]
     }
   ];
@@ -88,21 +84,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`h-full flex flex-col justify-between bg-white border-r border-slate-200/90 py-5 select-none overflow-y-auto ${
+      className={`h-full flex flex-col justify-between bg-white border-r border-stone-200 py-5 select-none overflow-y-auto ${
         isMobile ? 'w-full px-4' : 'w-64 px-4 shrink-0'
       }`}
     >
       {/* Top Header if in Mobile Drawer */}
       {isMobile && (
-        <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-700 to-green-500 flex items-center justify-center text-white">
+        <div className="flex items-center gap-3 pb-4 mb-4 border-b border-stone-200">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-sm">
             <Sprout className="w-5 h-5" />
           </div>
           <div>
-            <div className="font-extrabold text-base text-slate-900 font-heading">
-              KRISHISMART <span className="text-emerald-600">AI</span>
+            <div className="font-extrabold text-base text-stone-900 font-heading tracking-tight">
+              KRISHISMART <span className="text-emerald-700">AI</span>
             </div>
-            <p className="text-[11px] text-slate-500">{t('tagline')}</p>
+            <p className="text-[11px] text-stone-500">Smart Agriculture for Farmers</p>
           </div>
         </div>
       )}
@@ -111,51 +107,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="space-y-6">
         {navItems.map((sec, idx) => (
           <div key={idx} className="space-y-1">
-            <div className="px-3 text-[10px] font-extrabold tracking-wider uppercase text-slate-400">
+            <div className="px-3 text-[11px] font-black tracking-wider uppercase text-stone-400">
               {sec.group}
             </div>
-            <div className="space-y-0.5 mt-1">
+            <div className="space-y-1 mt-1.5">
               {sec.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = currentTab === item.id;
+                const isActive = currentTab === item.id || (item.id === 'crops' && currentTab === 'crops');
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleSelect(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 group ${
                       isActive
-                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold translate-x-1'
-                        : 'text-slate-600 hover:bg-emerald-50/70 hover:text-emerald-800'
+                        ? 'bg-emerald-700 text-white shadow-sm font-bold'
+                        : 'text-stone-700 hover:bg-emerald-50/80 hover:text-emerald-900'
                     }`}
                   >
                     <div className="flex items-center gap-3 truncate">
                       <Icon
-                        className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                        className={`w-4 h-4 shrink-0 ${
                           isActive
                             ? 'text-white'
-                            : item.isGold
-                            ? 'text-amber-500'
-                            : item.isHighlight
-                            ? 'text-emerald-600'
-                            : 'text-slate-400 group-hover:text-emerald-600'
+                            : 'text-stone-400 group-hover:text-emerald-700'
                         }`}
                       />
                       <span className="truncate">{item.label}</span>
                     </div>
 
-                    {item.badge && (
+                    {item.id === 'crops' && (
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-tight shrink-0 ${
-                          isActive
-                            ? 'bg-white/25 text-white'
-                            : item.isGold
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : item.isHighlight
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-600'
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800'
                         }`}
                       >
-                        {item.badge}
+                        {crops.length}
                       </span>
                     )}
                   </button>
@@ -167,28 +153,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Farm Snapshot Card */}
-      <div className="mt-8 pt-4 border-t border-slate-100">
-        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md relative overflow-hidden">
+      <div className="mt-6 pt-4 border-t border-stone-200">
+        <div className="p-3.5 rounded-2xl bg-stone-900 text-white shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Flame className="w-4 h-4 text-amber-400" />
-              <span className="text-[11px] font-bold text-slate-200">
+              <span className="text-[11px] font-bold text-stone-200">
                 {user?.streakDays || 1} Day Streak
               </span>
             </div>
-            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-800 text-emerald-200">
               {user?.xp || 0} XP
             </span>
           </div>
 
-          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden mb-2">
+          <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden mb-2">
             <div
-              className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min(100, ((user?.xp || 0) % 1000) / 10)}%` }}
             />
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-slate-300">
+          <div className="flex items-center justify-between text-[10px] text-stone-400">
             <span>{pendingTasksCount} Tasks Pending</span>
             <button
               onClick={() => handleSelect('journey')}

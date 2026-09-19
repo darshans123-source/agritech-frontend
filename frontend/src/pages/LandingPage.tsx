@@ -117,29 +117,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 overflow-hidden">
       {/* 1. HERO SECTION */}
-      <section className="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden gradient-mesh-bg border-b border-slate-200">
+      <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 overflow-hidden bg-[#fbfcf9] border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Hero Copy */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-xs font-bold shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Next-Gen Indian AgriTech SaaS 2.0</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold shadow-2xs">
+                <Sprout className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Agricultural Technology Platform for Farmers</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12] font-heading">
-                {t('landingHeroTitle')}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-stone-900 leading-[1.15] font-heading">
+                Smart Farming. Better Decisions. Better Future.
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                {t('landingHeroSub')}
+              <p className="text-base sm:text-lg text-stone-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                A simple, human-friendly agriculture platform designed for real farmers. Monitor crop health, automated water pumps, drone spraying, and real-time mandi prices in one place.
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
                 <button
                   onClick={onGetStarted}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-base shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2.5 group"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2.5 group cursor-pointer"
                 >
                   <span>{t('getStarted')}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -147,93 +147,71 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <button
                   onClick={onExploreApp}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-slate-100 active:scale-95 text-slate-800 font-bold text-base border border-slate-300 shadow-md transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-stone-50 active:scale-95 text-stone-800 font-bold text-base border border-stone-300 shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{t('exploreApp')}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                  <ChevronRight className="w-4 h-4 text-stone-500" />
                 </button>
               </div>
 
               {/* Trust Indicators */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-200/80 text-left">
+              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-stone-200 text-left">
                 <div>
-                  <div className="text-2xl font-black text-emerald-700 font-heading">50,000+</div>
-                  <div className="text-xs text-slate-500 font-medium">Farmers Empowered</div>
+                  <div className="text-2xl font-black text-emerald-800 font-heading">50,000+</div>
+                  <div className="text-xs text-stone-500 font-medium">Active Farmers</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-emerald-700 font-heading">94.8%</div>
-                  <div className="text-xs text-slate-500 font-medium">Disease AI Accuracy</div>
+                  <div className="text-2xl font-black text-emerald-800 font-heading">94.8%</div>
+                  <div className="text-xs text-stone-500 font-medium">Crop Health Accuracy</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-emerald-700 font-heading">₹2.4 Cr+</div>
-                  <div className="text-xs text-slate-500 font-medium">Extra Value Realized</div>
+                  <div className="text-2xl font-black text-emerald-800 font-heading">₹2.4 Cr+</div>
+                  <div className="text-xs text-stone-500 font-medium">Extra Value Realized</div>
                 </div>
               </div>
             </div>
 
-            {/* Right Hero Visual Illustration Dashboard Mock */}
+            {/* Right Hero Visual with Authentic Agriculture Imagery */}
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Floating Backdrop Glow */}
-                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur-2xl opacity-25"></div>
-
-                {/* Interactive Hero Card */}
-                <div className="relative bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4">
-                  {/* Top Status */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
-                        🌱
+                {/* Hero Agricultural Card */}
+                <div className="bg-white rounded-3xl border border-stone-200 shadow-md overflow-hidden space-y-4">
+                  <div className="relative h-56 w-full bg-stone-100 overflow-hidden">
+                    <img
+                      src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80"
+                      alt="Farmer in healthy agricultural field"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent flex items-end p-4">
+                      <div className="text-white">
+                        <div className="text-xs font-bold text-emerald-300">Live Farm Monitoring</div>
+                        <div className="text-base font-extrabold">Cauvery Valley Field 2 (Tomato)</div>
                       </div>
-                      <div>
-                        <div className="font-bold text-xs text-slate-900">Cauvery Valley Field 2</div>
-                        <div className="text-[10px] text-emerald-600 font-semibold">Active: Tomato Hybrid (Arka Rakshak)</div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      Health: 94%
-                    </span>
-                  </div>
-
-                  {/* Live Metrics Quad */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">Soil Moisture</div>
-                      <div className="text-lg font-bold text-slate-900 mt-0.5">58% Optimal</div>
-                      <div className="text-[10px] text-emerald-600 font-semibold">Pump in Auto-Standby</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">Predicted Price</div>
-                      <div className="text-lg font-bold text-amber-600 mt-0.5">₹3,120 / qtl</div>
-                      <div className="text-[10px] text-emerald-600 font-semibold">+38% Peak in 25 days</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">Weather AI</div>
-                      <div className="text-lg font-bold text-slate-900 mt-0.5">29.4°C Calm</div>
-                      <div className="text-[10px] text-slate-500 font-medium">Spraying window: 4:30 PM</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase">Drone Status</div>
-                      <div className="text-lg font-bold text-purple-700 mt-0.5">Ready for Mission</div>
-                      <div className="text-[10px] text-slate-500 font-medium">14 min spray flight</div>
                     </div>
                   </div>
 
-                  {/* Quick Action Simulator */}
-                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-900 to-teal-900 text-white flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <BrainCircuit className="w-5 h-5 text-emerald-300 animate-pulse" />
-                      <div className="text-xs">
-                        <div className="font-bold">AI Diagnostics Engine</div>
-                        <div className="text-[10px] text-emerald-200">Zero crop loss protocol active</div>
-                      </div>
+                  {/* Clean Metrics Grid */}
+                  <div className="p-4 grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-[#fbfcf9] border border-stone-200">
+                      <div className="text-[10px] text-stone-400 font-bold uppercase">Soil Moisture</div>
+                      <div className="text-base font-bold text-stone-900 mt-0.5">58% Optimal</div>
+                      <div className="text-[10px] text-emerald-700 font-semibold">Pump Ready</div>
                     </div>
-                    <button
-                      onClick={onExploreApp}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[11px] transition-colors"
-                    >
-                      Open Live
-                    </button>
+                    <div className="p-3 rounded-2xl bg-[#fbfcf9] border border-stone-200">
+                      <div className="text-[10px] text-stone-400 font-bold uppercase">Mandi Rate</div>
+                      <div className="text-base font-bold text-stone-900 mt-0.5">₹31/kg</div>
+                      <div className="text-[10px] text-emerald-700 font-semibold">+38% 25-day trend</div>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-[#fbfcf9] border border-stone-200">
+                      <div className="text-[10px] text-stone-400 font-bold uppercase">Farm Weather</div>
+                      <div className="text-base font-bold text-stone-900 mt-0.5">29.4°C Calm</div>
+                      <div className="text-[10px] text-stone-500">Good for spraying</div>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-[#fbfcf9] border border-stone-200">
+                      <div className="text-[10px] text-stone-400 font-bold uppercase">Drone Status</div>
+                      <div className="text-base font-bold text-emerald-800 mt-0.5">Ready to Fly</div>
+                      <div className="text-[10px] text-stone-500">14 min spray flight</div>
+                    </div>
                   </div>
                 </div>
               </div>

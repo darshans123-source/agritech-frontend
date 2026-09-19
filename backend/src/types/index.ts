@@ -56,6 +56,8 @@ export interface Crop {
   fertilizerSchedule: string;
   projectedYieldKg: number;
   expectedRevenue: number;
+  imageUrl?: string;
+  nextTask?: string;
   timeline: CropTimelineStage[];
 }
 

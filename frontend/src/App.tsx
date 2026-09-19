@@ -25,6 +25,8 @@ import { KrishiJourneyPage } from './pages/KrishiJourneyPage';
 import { FarmerProfilePage } from './pages/FarmerProfilePage';
 import { AuthModal } from './pages/AuthModal';
 import { AlertCenterModal } from './pages/AlertCenterModal';
+import { LocationModal } from './components/layout/LocationModal';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 
 const MainAppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
@@ -33,7 +35,7 @@ const MainAppContent: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register' | 'onboarding'>('login');
 
-  const { isAuthenticated } = useFarmData();
+  const { isAuthenticated, isLocationModalOpen, setIsLocationModalOpen, setIsAIChatOpen } = useFarmData();
 
   const handleOpenAuth = (mode: 'login' | 'register' | 'onboarding' = 'login') => {
     setAuthInitialMode(mode);
@@ -53,6 +55,7 @@ const MainAppContent: React.FC = () => {
       case 'dashboard':
         return <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />;
       case 'myFarms':
+      case 'crops':
         return <MyFarmsPage />;
       case 'aiHub':
         return <AIHubPage />;
@@ -86,7 +89,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#fbfcf9] text-stone-900 flex flex-col selection:bg-emerald-600 selection:text-white">
       {/* Top Universal Navbar */}
       <Navbar
         currentTab={currentTab}
@@ -133,6 +136,19 @@ const MainAppContent: React.FC = () => {
 
       {/* Floating 24/7 AI Assistant */}
       <FloatingAIChat />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        onOpenAI={() => setIsAIChatOpen(true)}
+      />
+
+      {/* Location Settings & Geolocation Modal */}
+      <LocationModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+      />
 
       {/* Auth & Onboarding Modal */}
       <AuthModal

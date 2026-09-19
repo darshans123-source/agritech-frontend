@@ -17,8 +17,21 @@ import { AIChatMessage } from '../../types';
 
 export const FloatingAIChat: React.FC = () => {
   const { language, t } = useLanguage();
-  const { user, crops, weather, financialSummary, isProUnlocked, addXP } = useFarmData();
-  const [isOpen, setIsOpen] = useState(false);
+  const {
+    user,
+    crops,
+    weather,
+    financialSummary,
+    isProUnlocked,
+    addXP,
+    locationState,
+    activePromptForAI,
+    clearAIChatPrompt,
+    isAIChatOpen,
+    setIsAIChatOpen,
+    aiFarmHealth
+  } = useFarmData();
+
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -26,25 +39,26 @@ export const FloatingAIChat: React.FC = () => {
 
   const initialPrompts: Record<string, string[]> = {
     en: [
+      "Analyze my farm today",
+      "What should I do today?",
       "Should I irrigate my crops today?",
-      "Diagnose dark brown circular spots on tomato leaves",
       "When is the most profitable time to sell my harvest?",
-      "Am I eligible for PMKSY drip irrigation subsidy?",
-      "Summarize my farm net profit and expenses this season"
+      "Check disease risk on tomato",
+      "Show my financial health"
     ],
     kn: [
+      "ಇಂದು ನನ್ನ ಜಮೀನನ್ನು ವಿಶ್ಲೇಷಿಸಿ",
+      "ಇಂದು ನಾನು ಏನು ಮಾಡಬೇಕು?",
       "ಇಂದು ನನ್ನ ಬೆಳೆಗೆ ನೀರು ಹಾಯಿಸಬೇಕೇ?",
-      "ಟೊಮ್ಯಾಟೋ ಎಲೆಯ ಮೇಲಿನ ಕಪ್ಪು ಮಚ್ಚೆಗಳಿಗೆ ಚಿಕಿತ್ಸೆ ಏನು?",
       "ನನ್ನ ಬೆಳೆ ಮಾರಾಟ ಮಾಡಲು ಸೂಕ್ತ ಸಮಯ ಯಾವುದು?",
-      "ಹನಿ ನೀರಾವರಿ ಸಬ್ಸಿಡಿಗೆ ನಾನು ಅರ್ಹನೇ?",
-      "ಈ ಋತುವಿನ ನನ್ನ ಜಮೀನಿನ ಲಾಭ-ಖರ್ಚು ವಿವರ ನೀಡಿ"
+      "ಟೊಮ್ಯಾಟೋ ಎಲೆಯ ರೋಗ ತಪಾಸಣೆ ಮಾಡಿ"
     ],
     hi: [
+      "आज मेरे खेत का समग्र विश्लेषण करें",
+      "आज मुझे क्या काम करना चाहिए?",
       "क्या मुझे आज अपने खेत में सिंचाई करनी चाहिए?",
-      "टमाटर की पत्तियों पर काले धब्बों का क्या इलाज है?",
-      "फसल बेचने का सबसे अच्छा और लाभदायक समय क्या है?",
-      "क्या मैं ड्रिप सिंचाई सब्सिडी के लिए पात्र हूँ?",
-      "इस सीजन में मेरे खेत का कुल मुनाफा और खर्च बताएं"
+      "फसल बेचने का सबसे अच्छा समय क्या है?",
+      "फसल रोग जोखिम की जांच करें"
     ]
   };
 
@@ -54,14 +68,23 @@ export const FloatingAIChat: React.FC = () => {
       sender: 'assistant',
       text:
         language === 'kn'
-          ? `ನಮಸ್ಕಾರ ${user?.name || 'ರೈತ ಮಿತ್ರರೆ'}! 🌱 ನಾನು ನಿಮ್ಮ ಕೃಷಿಸ್ಮಾರ್ಟ್ ಎಐ ಸಲಹೆಗಾರ. ಬೆಳೆ ರೋಗಗಳು, ಹವಾಮಾನ, ಮಾರುಕಟ್ಟೆ ದರಗಳು ಅಥವಾ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳ ಕುರಿತು ಯಾವುದೇ ಪ್ರಶ್ನೆ ಕೇಳಿ!`
+          ? `ನಮಸ್ಕಾರ ${user?.name || 'ರೈತ ಮಿತ್ರರೆ'}! 🌱 ನಾನು ನಿಮ್ಮ ಕೃಷಿಸ್ಮಾರ್ಟ್ ಎಐ ಸಲಹೆಗಾರ. ${locationState.address.district} ನೈಜ-ಸಮಯ ಹವಾಮಾನ ಮತ್ತು ಮಣ್ಣಿನ ಮಾಹಿತಿ ಆಧಾರಿತವಾಗಿ ಯಾವುದೇ ಪ್ರಶ್ನೆ ಕೇಳಿ!`
           : language === 'hi'
-          ? `नमस्ते ${user?.name || 'किसान भाई'}! 🌱 मैं आपका कृषिज्मार्ट AI सहायक हूँ। फसल सुरक्षा, मौसम सलाह, मंडी भाव या सरकारी योजनाओं के बारे में कुछ भी पूछें!`
-          : `Hello ${user?.name || 'Farmer'}! 🌱 I'm your KrishiSmart AI Farm Advisor. Ask me anything about crop diagnosis, weather advisories, mandi selling windows, or government subsidies!`,
+          ? `नमस्ते ${user?.name || 'किसान भाई'}! 🌱 मैं आपका कृषिज्मार्ट AI सलाहकार हूँ। ${locationState.address.district} के वास्तविक मौसम और फसल स्थिति अनुसार कुछ भी पूछें!`
+          : `Hello ${user?.name || 'Farmer'}! 🌱 I'm your KrishiSmart AI Farm Advisor, calibrated for **${locationState.address.formatted}**. Ask me about real-time crop analysis, irrigation, disease risks, or mandi trends!`,
       timestamp: 'Just now',
       language
     }
   ]);
+
+  // Listen to external triggers from AI Command Center
+  useEffect(() => {
+    if (activePromptForAI) {
+      setIsAIChatOpen(true);
+      handleSend(activePromptForAI);
+      clearAIChatPrompt();
+    }
+  }, [activePromptForAI]);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -83,46 +106,32 @@ export const FloatingAIChat: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Dynamic AI response generation based on live farm state
+    // Dynamic AI response generation based on live farm state & location
     setTimeout(() => {
       let reply = '';
       const q = query.toLowerCase();
 
-      if (q.includes('irrigate') || q.includes('ನೀರು') || q.includes('सिंचाई') || q.includes('water')) {
+      if (q.includes('analyze') || q.includes('analysis') || q.includes('ವಿಶ್ಲೇಷಿಸಿ') || q.includes('विश्लेषण')) {
+        reply = `🌾 **AI Daily Farm Diagnostic (${locationState.address.formatted}):**\n\n• **Farm Health Score:** ${aiFarmHealth.overall}/100 (Optimal)\n• **Crop Foliar Vigor:** ${aiFarmHealth.cropHealth}% across ${crops.length} active plots\n• **Micro-Climate:** ${weather.temp}°C, ${weather.condition}, Humidity ${weather.humidity}%\n• **Soil Moisture:** ${weather.soilMoisture}% (Field Capacity Satisfactory)\n• **Advisory:** ${weather.sprayingAdvisory.reason}`;
+      } else if (q.includes('what should i do') || q.includes('do today') || q.includes('ಮಾಡಬೇಕು') || q.includes('क्या काम')) {
+        reply = `📋 **Today's AI Action Plan for ${user?.name || 'Farmer'}:**\n\n1. **Spraying Window:** ${weather.sprayingAdvisory.bestWindow} (${weather.sprayingAdvisory.status}). Wind speed is safe at ${weather.windSpeed} km/h.\n2. **Irrigation:** ${weather.irrigationAdvisory.reason}\n3. **Field Scout:** Inspect tomato parcel lower leaves for early blight spores.\n4. **Market Opportunity:** Regional APMC prices for your crops are currently peaking.`;
+      } else if (q.includes('financial') || q.includes('profit') || q.includes('money') || q.includes('ಲಾಭ') || q.includes('मुनाफा')) {
+        reply = `💰 **KrishiNidhi Financial Intelligence:**\n\n• **Projected Net Income:** ₹${financialSummary.netProfit.toLocaleString('en-IN')}\n• **Total Income:** ₹${financialSummary.totalIncome.toLocaleString('en-IN')}\n• **Input Expenses:** ₹${financialSummary.totalExpenses.toLocaleString('en-IN')}\n• **Profit Margin:** ${financialSummary.profitMargin}%\n• **Financial Health Rating:** A+ (Excellent working capital liquidity)`;
+      } else if (q.includes('irrigate') || q.includes('ನೀರು') || q.includes('सिंचाई') || q.includes('water')) {
         reply =
           language === 'kn'
-            ? `💧 **ನೀರಾವರಿ ಸಲಹೆ:**\nಪ್ರಸ್ತುತ ನಿಮ್ಮ ಮಣ್ಣಿನ ತೇವಾಂಶ **${weather.soilMoisture}%** ನಲ್ಲಿದೆ (ಉತ್ತಮ ಸ್ಥಿತಿ). ಮುಂದಿನ 36 ಗಂಟೆಗಳಲ್ಲಿ **65% ಮಳೆಯಾಗುವ ಮುನ್ಸೂಚನೆ** ಇರುವುದರಿಂದ, ಇಂದು ನೀರಾವರಿ ಮಾಡುವುದನ್ನು ಮುಂದೂಡಲು ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ.`
+            ? `💧 **ನೀರಾವರಿ ಸಲಹೆ (${locationState.address.district}):**\nಪ್ರಸ್ತುತ ನಿಮ್ಮ ಮಣ್ಣಿನ ತೇವಾಂಶ **${weather.soilMoisture}%** ನಲ್ಲಿದೆ. ಮಳೆಯ ಮುನ್ಸೂಚನೆ **${weather.rainProbability}%** ಇರುವುದರಿಂದ, ನೀರಾವರಿ ಕಡಿಮೆ ಮಾಡಲು ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ.`
             : language === 'hi'
-            ? `💧 **सिंचाई सलाह:**\nवर्तमान में आपके खेत की मिट्टी में नमी **${weather.soilMoisture}%** (पर्याप्त) है। अगले 36 घंटों में **बारिश की 65% संभावना** है, इसलिए आज अतिरिक्त सिंचाई न करने की सलाह दी जाती है।`
-            : `💧 **Smart Irrigation Advisory:**\nYour current soil moisture is optimal at **${weather.soilMoisture}%**. With **${weather.rainProbability}% to 65% rain probability** forecasted over the next 36 hours, you can save energy and postpone pump operation for 2 days.`;
-      } else if (q.includes('spot') || q.includes('disease') || q.includes('tomato') || q.includes('ರೋಗ') || q.includes('ಇಲಾಜು') || q.includes('मक्के') || q.includes('धब्बे')) {
-        reply =
-          language === 'kn'
-            ? `🔬 **ರೋಗ ತಪಾಸಣೆ:**\nಟೊಮ್ಯಾಟೋ ಎಲೆಯ ಮೇಲಿನ ವೃತ್ತಾಕಾರದ ಕಪ್ಪು ಮಚ್ಚೆಗಳು **Early Blight (ಆಲ್ಟರ್ನೇರಿಯಾ ಸೊಲಾನಿ)** ಶಿಲೀಂಧ್ರ ರೋಗದ ಲಕ್ಷಣಗಳಾಗಿವೆ.\n\n✅ **ಜೈವಿಕ ಚಿಕಿತ್ಸೆ:** ಟ್ರೈಕೋಡರ್ಮ ವಿರಿಡೆ (5g/ಲೀಟರ್) ಸಿಂಪಡಿಸಿ.\n⚠️ **ರಾಸಾಯನಿಕ ಚಿಕಿತ್ಸೆ:** Azoxystrobin 18.2% + Difenoconazole (1 ml/L) ಸಿಂಪಡಿಸಿ.`
-            : language === 'hi'
-            ? `🔬 **फसल रोग निदान:**\nपत्तियों पर गोल गाढ़े छल्ले **अर्ली ब्लाइट (Early Blight)** कवक के लक्षण हैं।\n\n✅ **जैविक उपचार:** ट्राइकोडर्मा विरिडी 5 ग्राम प्रति लीटर पानी में मिलाकर छिड़कें।\n⚠️ **रासायनिक नियंत्रण:** एज़ोक्सीस्ट्रोबिन + डिफेनोकोनाज़ोल (1 मिली/लीटर) का छिड़काव करें।`
-            : `🔬 **AI Pathology Diagnosis:**\nTarget-board concentric dark rings on tomato foliage indicate **Early Blight (Alternaria solani)** with 94% probability.\n\n✅ **Organic Treatment:** Spray Trichoderma viride @ 5g/L or 1% Bordeaux mixture.\n⚠️ **Chemical Remedy:** Azoxystrobin 18.2% + Difenoconazole 11.4% SC @ 1 ml/L in the cool evening window.`;
+            ? `💧 **सिंचाई सलाह (${locationState.address.district}):**\nवर्तमान में आपके खेत की मिट्टी में नमी **${weather.soilMoisture}%** है। बारिश की संभावना **${weather.rainProbability}%** होने के कारण अतिरिक्त सिंचाई टालें।`
+            : `💧 **Smart Irrigation Advisory for ${locationState.address.district}:**\nYour current soil moisture is optimal at **${weather.soilMoisture}%**. With **${weather.rainProbability}% rain probability** forecasted, you can save energy and postpone pump operation.`;
+      } else if (q.includes('spot') || q.includes('disease') || q.includes('tomato') || q.includes('ರೋಗ') || q.includes('ಇಲಾಜು') || q.includes('धब्बे')) {
+        reply = `🔬 **AI Pathology Diagnosis:**\nTarget-board concentric dark rings on tomato foliage indicate **Early Blight (Alternaria solani)** with 94% probability.\n\n✅ **Organic Treatment:** Spray Trichoderma viride @ 5g/L or 1% Bordeaux mixture.\n⚠️ **Chemical Remedy:** Azoxystrobin 18.2% + Difenoconazole 11.4% SC @ 1 ml/L in the cool evening window.`;
       } else if (q.includes('sell') || q.includes('price') || q.includes('ಮಾರಾಟ') || q.includes('ಮಂಡಿ') || q.includes('भाव') || q.includes('बेचने')) {
-        reply =
-          language === 'kn'
-            ? `📈 **ಕೃಷಿಭವಿಷ್ಯ ಎಐ ಮಾರಾಟ ಮುನ್ಸೂಚನೆ:**\nಟೊಮ್ಯಾಟೋ ದರಗಳು ಪ್ರಸ್ತುತ ₹2,250/ಕ್ವಿಂಟಾಲ್‌ನಿಂದ ಮುಂದಿನ 20-30 ದಿನಗಳಲ್ಲಿ **₹3,120/ಕ್ವಿಂಟಾಲ್** ವರೆಗೆ ಏರುವ ಸಾಧ್ಯತೆ ಇದೆ (+38% ಹೆಚ್ಚುವರಿ ಲಾಭ). ಬೆಂಗಳೂರು ಅಥವಾ ಕೋಲಾರ ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ಮಾರಾಟ ಮಾಡುವುದು ಅತ್ಯಂತ ಲಾಭದಾಯಕ.`
-            : language === 'hi'
-            ? `📈 **कृषिभविष्य AI बाजार विश्लेषण:**\nटमाटर के भाव वर्तमान ₹2,250/क्विंटल से अगले 25-30 दिनों में **₹3,120/क्विंटल** तक बढ़ने का अनुमान है (+38% अतिरिक्त लाभ)। निकटतम बेंगलुरु या कोलार APMC में बेचना सबसे फायदेमंद रहेगा।`
-            : `📈 **KrishiBhavishya Market Forecast:**\nOur predictive engine projects Tomato prices surging from ₹2,250/qtl to a peak of **₹3,120/qtl in 25–30 days (+38.6% profit lift)**. Best selling window is active during the upcoming festival demand spike at Kolar & Bengaluru APMC.`;
+        reply = `📈 **KrishiBhavishya Market Forecast (${locationState.address.district} & Surrounding Hubs):**\nOur predictive engine projects Tomato prices surging from current rates to a peak in 20–25 days (+38.6% profit lift). Top demand is concentrated at Kolar and Bengaluru APMCs.`;
       } else if (q.includes('scheme') || q.includes('subsidy') || q.includes('ಯೋಜನೆ') || q.includes('ಸಬ್ಸಿಡಿ') || q.includes('योजना') || q.includes('सब्सिडी')) {
-        reply =
-          language === 'kn'
-            ? `🏛️ **ಸರ್ಕಾರಿ ಯೋಜನೆ ಮಾಹಿತಿ:**\nನಿಮ್ಮ ${user?.landSize || 6.5} ಎಕರೆ ಜಮೀನಿಗೆ **PMKSY ಹನಿ ನೀರಾವರಿ ಯೋಜನೆ (75% ರಿಂದ 90% ಸಬ್ಸಿಡಿ)** ಮತ್ತು **PM-KISAN (ವರ್ಷಕ್ಕೆ ₹6,000)** ಲಭ್ಯವಿದೆ. ಸರ್ಕಾರಿ ಯೋಜನೆಗಳ ಟ್ಯಾಬ್‌ನಲ್ಲಿ ನೇರವಾಗಿ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.`
-            : language === 'hi'
-            ? `🏛️ **सरकारी योजना पात्रता:**\nआपकी ${user?.landSize || 6.5} एकड़ भूमि के लिए **PMKSY सूक्ष्म सिंचाई (75% से 90% सब्सिडी)** और **PM-किसान सम्मान निधि (₹6,000/वर्ष)** पूरी तरह से लागू है। आप सरकारी योजनाएं टैब से आवेदन प्रक्रिया देख सकते हैं।`
-            : `🏛️ **Government Scheme Match:**\nBased on your registered **${user?.landSize || 6.5} acres** in ${user?.district || 'Mandya'}, you are eligible for **PMKSY Micro-Irrigation (up to 75–90% capital subsidy)** and **PM-KISAN (₹6,000/yr DBT)**. You can track paperwork in the Scheme Finder tab!`;
+        reply = `🏛️ **Government Scheme Match:**\nBased on your registered **${user?.landSize || 6.5} acres** in ${locationState.address.district}, you are eligible for **PMKSY Micro-Irrigation (up to 75–90% capital subsidy)** and **PM-KISAN (₹6,000/yr DBT)**. You can apply directly in the Scheme Finder tab!`;
       } else {
-        reply =
-          language === 'kn'
-            ? `🌾 **ಕೃಷಿ ಮಾಹಿತಿ:** ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದಂತೆ ನೈಜ ಸಮಯದ ವಿಶ್ಲೇಷಣೆ ಸಿದ್ಧವಾಗಿದೆ. ನಿಮ್ಮ ಜಮೀನಿನ ಆರೋಗ್ಯ ಸ್ಕೋರ್ **94/100** ಆಗಿದೆ ಮತ್ತು ಒಟ್ಟು ನಿವ್ವಳ ಲಾಭ **₹${financialSummary.netProfit.toLocaleString('en-IN')}** ಆಗಿದೆ.`
-            : language === 'hi'
-            ? `🌾 **कृषि विश्लेषण:** आपके प्रश्न के अनुसार आपका खेत स्वास्थ्य स्कोर **94/100** बहुत अच्छा है, और वर्तमान शुद्ध लाभ **₹${financialSummary.netProfit.toLocaleString('en-IN')}** दर्ज किया गया है।`
-            : `🌾 **KrishiSmart AI Insight:** Based on your registered crops (${crops.map((c) => c.name).join(', ')}), your current Farm Health Index is strong at **94/100**, and projected net revenue is **₹${financialSummary.netProfit.toLocaleString('en-IN')}**. Let me know if you want a deeper breakdown!`;
+        reply = `🌾 **KrishiSmart AI Insight:** Based on your farm in **${locationState.address.formatted}**, your current Farm Health Index is strong at **${aiFarmHealth.overall}/100**, and projected net revenue is **₹${financialSummary.netProfit.toLocaleString('en-IN')}**. Let me know what specific action you'd like to explore!`;
       }
 
       const aiMsg: AIChatMessage = {
@@ -136,7 +145,7 @@ export const FloatingAIChat: React.FC = () => {
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
       addXP(15, 'Consulted Krishi AI');
-    }, 1000);
+    }, 900);
   };
 
   const handleVoiceToggle = () => {
@@ -161,9 +170,9 @@ export const FloatingAIChat: React.FC = () => {
   return (
     <>
       {/* Floating Trigger Button */}
-      <div className="fixed bottom-6 left-6 z-40">
+      <div className="fixed bottom-16 lg:bottom-6 left-4 sm:left-6 z-40">
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsAIChatOpen(!isAIChatOpen)}
           className="relative group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-700 via-emerald-600 to-green-600 text-white shadow-xl shadow-emerald-700/30 hover:scale-105 active:scale-95 transition-all duration-200 border-2 border-emerald-400/40"
         >
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
@@ -179,8 +188,8 @@ export const FloatingAIChat: React.FC = () => {
       </div>
 
       {/* Floating Chat Modal */}
-      {isOpen && (
-        <div className="fixed bottom-20 left-4 sm:left-6 z-50 w-[92vw] sm:w-[420px] h-[560px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200">
+      {isAIChatOpen && (
+        <div className="fixed bottom-20 left-3 sm:left-6 z-50 w-[94vw] sm:w-[420px] h-[580px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-emerald-800 to-emerald-700 text-white flex items-center justify-between border-b border-emerald-600/50">
             <div className="flex items-center gap-3">
@@ -203,7 +212,7 @@ export const FloatingAIChat: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => setIsAIChatOpen(false)}
               className="p-1.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />

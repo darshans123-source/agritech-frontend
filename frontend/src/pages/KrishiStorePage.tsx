@@ -67,34 +67,48 @@ export const KrishiStorePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-1 border border-emerald-200">
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Govt Certified Agri-Inputs & Tech</span>
+    <div className="space-y-8 pb-16 animate-in fade-in">
+      {/* Agricultural Store Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden shadow-sm border border-stone-200">
+        <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-stone-900">
+          <img
+            src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&auto=format&fit=crop&q=80"
+            alt="Agricultural seeds, inputs, and farm store"
+            className="w-full h-full object-cover opacity-85 hover:scale-102 transition-transform duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-900/40 to-transparent flex flex-col justify-end p-6 sm:p-8 text-white">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-700/80 backdrop-blur-xs text-white text-xs font-bold w-fit mb-2">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Certified Agri-Inputs & Farm Tech</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
+              Krishi Store
+            </h1>
+            <p className="text-xs sm:text-base text-stone-200 mt-0.5 max-w-2xl leading-relaxed">
+              Certified seeds, nano fertilizers, bio-protection, drip kits, and IoT sensors with farm-gate delivery.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">
-            {t('krishiStore')}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Certified seeds, nano fertilizers, bio-pesticides, drip kits, and IoT sensors with farm-gate delivery.
-          </p>
+        </div>
+      </div>
+
+      {/* Action Buttons Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-xs text-stone-500">
+          All products sourced directly from registered agricultural co-operatives & manufacturers.
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setShowOrdersModal(true)}
-            className="px-4 py-2.5 rounded-2xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Package className="w-4 h-4 text-emerald-600" />
+            <Package className="w-4 h-4 text-emerald-700" />
             <span>{t('orders')} ({orders.length})</span>
           </button>
 
           <button
             onClick={() => setShowCartDrawer(true)}
-            className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
+            className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>{t('cart')} ({cartItemCount})</span>

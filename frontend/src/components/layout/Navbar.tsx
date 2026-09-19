@@ -33,7 +33,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleMobileSidebar
 }) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, weather, cart, notifications, isAuthenticated } = useFarmData();
+  const {
+    user,
+    weather,
+    cart,
+    notifications,
+    isAuthenticated,
+    locationState,
+    setIsLocationModalOpen,
+    isWeatherLive
+  } = useFarmData();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -78,13 +87,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-white border-b border-stone-200 shadow-2xs transition-all">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Mobile Menu Toggle & Brand Logo */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onToggleMobileSidebar}
-            className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+            className="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             title="Open Menu"
           >
             <Menu className="w-5 h-5" />
@@ -94,19 +103,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setCurrentTab('dashboard')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-700 via-emerald-600 to-green-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-              <Sprout className="w-6 h-6" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+              <Sprout className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 font-heading">
-                  KRISHISMART <span className="text-emerald-600">AI</span>
+                <span className="font-extrabold text-base sm:text-xl tracking-tight text-stone-900 font-heading">
+                  KRISHISMART <span className="text-emerald-700">AI</span>
                 </span>
-                <span className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 rounded-md border border-emerald-200">
-                  AgriTech 2.0
+                <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200">
+                  Smart Farming
                 </span>
               </div>
-              <p className="hidden md:block text-[11px] text-slate-500 font-medium -mt-1">
+              <p className="hidden md:block text-[11px] text-stone-500 font-medium -mt-0.5">
                 {t('tagline')}
               </p>
             </div>
@@ -114,31 +123,52 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Middle: Universal Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4">
+        <div className="hidden lg:flex flex-1 max-w-xs xl:max-w-md mx-3">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 bg-slate-100/90 border border-slate-200/90 rounded-full text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
+              className="w-full pl-10 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-full text-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-600 focus:bg-white transition-all placeholder:text-stone-400"
             />
           </form>
         </div>
 
-        {/* Right: Actions (Weather Snippet, Language, Notifications, Cart, Profile) */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right: Actions (Location Selector, Weather, Language, Notifications, Cart, Profile) */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Real-time Location Control Pill */}
+          <button
+            onClick={() => setIsLocationModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-emerald-50 border border-stone-200 hover:border-emerald-300 transition-all text-stone-800 group"
+            title="Click to detect GPS or change farm location"
+          >
+            <span className="relative flex h-2 w-2">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  locationState.source === 'gps' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              ></span>
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  locationState.source === 'gps' ? 'bg-emerald-600' : 'bg-amber-600'
+                }`}
+              ></span>
+            </span>
+            <span className="text-[11px] sm:text-xs font-bold text-stone-800 group-hover:text-emerald-800 truncate max-w-[130px] sm:max-w-[170px]">
+              📍 {locationState.address.district || 'Raichur'}, {locationState.address.state || 'Karnataka'}
+            </span>
+          </button>
+
           {/* Quick Weather Capsule */}
           <button
             onClick={() => setCurrentTab('weather')}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50/80 border border-amber-200/80 hover:bg-amber-100/80 transition-colors text-amber-900"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 hover:bg-amber-100/80 transition-colors text-amber-900"
+            title="Farm weather station"
           >
-            <Sun className="w-4 h-4 text-amber-600" />
-            <span className="text-xs font-semibold">{weather.temp}°C</span>
-            <span className="text-[11px] text-amber-700 hidden xl:inline font-medium">
-              {user?.district || 'Mandya'}
-            </span>
+            <Sun className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-xs font-bold">{weather.temp}°C</span>
           </button>
 
           {/* Language Switcher Dropdown */}

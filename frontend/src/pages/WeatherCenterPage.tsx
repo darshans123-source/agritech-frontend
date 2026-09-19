@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   CloudSun,
   Droplets,
@@ -12,13 +11,22 @@ import {
   Clock,
   Thermometer,
   Gauge,
-  Compass
+  Compass,
+  MapPin,
+  RefreshCw
 } from 'lucide-react';
 import { useFarmData } from '../context/FarmDataContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export const WeatherCenterPage: React.FC = () => {
-  const { weather, user } = useFarmData();
+  const {
+    weather,
+    locationState,
+    setIsLocationModalOpen,
+    refreshWeather,
+    weatherLastUpdated,
+    isWeatherLive
+  } = useFarmData();
   const { t } = useLanguage();
 
   return (
@@ -34,8 +42,25 @@ export const WeatherCenterPage: React.FC = () => {
             {t('weatherCenter')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Real-time farm weather telemetry in {user?.district || 'Mandya'}, {user?.state || 'Karnataka'}.
+            Real-time farm weather telemetry in {locationState.address.formatted}.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsLocationModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+            <span>📍 Change Location</span>
+          </button>
+          <button
+            onClick={refreshWeather}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
@@ -46,14 +71,14 @@ export const WeatherCenterPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                Current Weather Telemetry
+                Current Weather Telemetry • {weatherLastUpdated}
               </span>
               <h2 className="text-xl font-bold text-white font-heading">
-                {user?.village || 'Pandavapura'}, {user?.district || 'Mandya'}
+                {locationState.address.formatted}
               </h2>
             </div>
             <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-extrabold border border-emerald-500/30">
-              Live Station
+              {isWeatherLive ? '● Live Station' : 'Synced'}
             </span>
           </div>
 

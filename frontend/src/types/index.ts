@@ -57,6 +57,8 @@ export interface Crop {
   projectedYieldKg: number;
   expectedRevenue: number;
   timeline: CropTimelineStage[];
+  imageUrl?: string;
+  nextTask?: string;
 }
 
 export interface FarmTask {
@@ -92,15 +94,17 @@ export interface WeatherData {
     recommendedMm: number;
     reason: string;
   };
-  forecast: Array<{
-    day: string;
-    date: string;
-    tempMax: number;
-    tempMin: number;
-    condition: string;
-    rainProb: number;
-    icon: string;
-  }>;
+  forecast: DailyForecast[];
+}
+
+export interface DailyForecast {
+  day: string;
+  date: string;
+  tempMax: number;
+  tempMin: number;
+  condition: string;
+  rainProb: number;
+  icon: string;
 }
 
 export interface MandiItem {

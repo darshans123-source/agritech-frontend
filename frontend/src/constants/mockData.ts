@@ -64,7 +64,7 @@ export const INITIAL_CROPS: Crop[] = [
   {
     id: 'crop-1',
     farmId: 'farm-1',
-    name: 'Paddy (Rice)',
+    name: 'Paddy',
     variety: 'BPT-5204 (Samba Mahsuri)',
     area: 2.5,
     sowingDate: '2026-06-10',
@@ -76,6 +76,8 @@ export const INITIAL_CROPS: Crop[] = [
     fertilizerSchedule: 'Potash & Zinc spray due in 4 days',
     projectedYieldKg: 6250,
     expectedRevenue: 156250,
+    nextTask: 'Irrigation tomorrow',
+    imageUrl: 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?w=600&auto=format&fit=crop&q=80',
     timeline: [
       { id: 'seed', name: 'Seed Treatment & Nursery', status: 'completed', progress: 100, estimatedDate: 'Jun 10', notes: 'Bio-priming with Trichoderma done.', tasks: ['Seed selection', 'Fungicide treatment'] },
       { id: 'germination', name: 'Transplanting & Germination', status: 'completed', progress: 100, estimatedDate: 'Jun 28', notes: 'Transplanted 21-day old seedlings at 20x15 cm spacing.', tasks: ['Field puddling', 'Basal fertilizer NPK'] },
@@ -99,6 +101,8 @@ export const INITIAL_CROPS: Crop[] = [
     fertilizerSchedule: 'Water soluble 19:19:19 via fertigation',
     projectedYieldKg: 18000,
     expectedRevenue: 288000,
+    nextTask: 'Bio-fungicide spray today',
+    imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80',
     timeline: [
       { id: 'seed', name: 'Nursery Bed Preparation', status: 'completed', progress: 100, estimatedDate: 'Jul 01', notes: 'Raised bed nursery with pro-trays.', tasks: ['Pro-tray seeding', 'Damping-off control'] },
       { id: 'germination', name: 'Hardening & Transplant', status: 'completed', progress: 100, estimatedDate: 'Jul 20', notes: 'Silver-black mulching installed.', tasks: ['Mulching & drip setup', 'Transplanting'] },
@@ -122,12 +126,38 @@ export const INITIAL_CROPS: Crop[] = [
     fertilizerSchedule: 'Second earthing up & potash booster',
     projectedYieldKg: 95000,
     expectedRevenue: 332500,
+    nextTask: 'Potash booster next week',
+    imageUrl: 'https://images.unsplash.com/photo-1598112972019-91e30f406976?w=600&auto=format&fit=crop&q=80',
     timeline: [
       { id: 'seed', name: 'Two-bud Sett Planting', status: 'completed', progress: 100, estimatedDate: 'Feb 15', notes: 'Treated with Bavistin & Carbendazim.', tasks: ['Furrowing', 'Sett treatment'] },
       { id: 'germination', name: 'Sprouting & Formative', status: 'completed', progress: 100, estimatedDate: 'Mar 25', notes: '92% germination rate recorded.', tasks: ['Gap filling', 'First earthing-up'] },
       { id: 'growth', name: 'Grand Growth & Elongation', status: 'active', progress: 60, estimatedDate: 'Aug 15', notes: 'Cane height avg 7.2 ft. Vigorous internode elongation.', tasks: ['Trash mulching', 'Stem borer bio-traps'] },
       { id: 'flowering', name: 'Maturity & Sugar Accumulation', status: 'upcoming', progress: 0, estimatedDate: 'Nov 30', notes: 'Brix index monitoring.', tasks: ['Stop N fertilizer', 'Pre-harvest brix check'] },
       { id: 'harvest', name: 'Cutting & Mill Dispatch', status: 'upcoming', progress: 0, estimatedDate: 'Jan 20', notes: 'Direct supply contract with Mandya Sugar Factory.', tasks: ['Factory cutting permit', 'Tractor transport'] }
+    ]
+  },
+  {
+    id: 'crop-4',
+    farmId: 'farm-2',
+    name: 'Cotton',
+    variety: 'RCH-659 (BG-II Hybrid)',
+    area: 1.5,
+    sowingDate: '2026-06-25',
+    expectedHarvestDate: '2026-11-15',
+    currentStage: 'growth',
+    healthScore: 92,
+    status: 'Healthy',
+    irrigationSchedule: 'Drip every 4 days',
+    fertilizerSchedule: 'Nitrogen split application at square formation',
+    projectedYieldKg: 3200,
+    expectedRevenue: 198000,
+    nextTask: 'Weeding & pest trap check',
+    imageUrl: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=600&auto=format&fit=crop&q=80',
+    timeline: [
+      { id: 'seed', name: 'Sowing & Germination', status: 'completed', progress: 100, estimatedDate: 'Jun 25', notes: 'Dibbling in moist soil.', tasks: ['Seed sowing', 'Pre-emergence herbicide'] },
+      { id: 'growth', name: 'Vegetative & Square Formation', status: 'active', progress: 55, estimatedDate: 'Aug 10', notes: 'Square formation started.', tasks: ['Pheromone trap installation', 'Earthing up'] },
+      { id: 'flowering', name: 'Flowering & Boll Development', status: 'upcoming', progress: 0, estimatedDate: 'Sep 20', notes: 'Monitor bollworm incidence.', tasks: ['Boron foliar spray'] },
+      { id: 'harvest', name: 'Boll Bursting & Picking', status: 'upcoming', progress: 0, estimatedDate: 'Nov 15', notes: 'First picking when 60% bolls burst.', tasks: ['Hand picking', 'Storage'] }
     ]
   }
 ];
